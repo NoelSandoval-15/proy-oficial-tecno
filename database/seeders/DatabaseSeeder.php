@@ -17,13 +17,18 @@ class DatabaseSeeder extends Seeder
             CategorieSeeder::class,
             SubCategorieSeeder::class,
             ProductSeeder::class,
-            UnitSeeder::class,
             InsumoSeeder::class,
             TableSeeder::class,
             ReservationSeeder::class,
             DetailsReservationSeeder::class,
             SalesNoteSeeder::class,
             SalesDetailSeeder::class,
+            SupplierSeeder::class,
+            PurchaseNotesSeeder::class,
+            InsumosNotesSeeder::class,
+            DetailsPurchasesSeeder::class,
+            DetailsInsumosSeeder::class,
+
         ]);
     }
 }

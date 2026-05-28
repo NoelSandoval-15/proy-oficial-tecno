@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_insumos', function (Blueprint $table) {
+        Schema::create('details_insumos', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('products_id');
             $table->unsignedBigInteger('insumos_id');
+            $table->unsignedBigInteger('insumos_notes_id');
             $table->integer('amount');
 
-            $table->timestamps();
-            
-            $table->foreign('products_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('insumos_id')->references('id')->on('insumos')->onDelete('cascade');
+            $table->foreign('insumos_notes_id')->references('id')->on('insumos_notes')->onDelete('cascade');
+
+            $table->timestamps();
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('detail_insumos');
+        Schema::dropIfExists('details_insumos');
     }
 };

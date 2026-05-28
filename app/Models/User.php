@@ -10,6 +10,8 @@ use Illuminate\Notifications\Notifiable;
 use App\Models\Theme;
 use App\Models\Reservation;
 use App\Models\Sales_Note;
+use App\Models\Insumos_Notes;
+use App\Models\Purchase_Notes;
 
 class User extends Authenticatable
 {
@@ -74,5 +76,15 @@ class User extends Authenticatable
     public function sales_notes_client()
     {
         return $this->hasMany(Sales_Note::class, 'users_client_id');
+    }
+
+    public function insumos_notes()
+    {
+        return $this->hasMany(Sales_Note::class, 'users_admin_id');
+    }
+
+    public function purchase_notes()
+    {
+        return $this->hasMany(Purchase_Notes::class, 'users_admin_id');
     }
 }

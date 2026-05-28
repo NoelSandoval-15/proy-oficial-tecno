@@ -11,13 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('insumos', function (Blueprint $table) {
+        Schema::create('insumos_notes', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->integer('amount');
-            $table->float('price');
+            $table->time('hour');
+            $table->date('date');
+            $table->unsignedBigInteger('users_admin_id');
 
             $table->timestamps();
+
+            $table->foreign('users_admin_id')->references('id')->on('users')->onDelete('cascade');
+
         });
     }
 
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('insumos');
+        Schema::dropIfExists('insumos_notes');
     }
 };
