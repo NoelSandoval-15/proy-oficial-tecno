@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class InsumosNotesSeeder extends Seeder
 {
 
-    private $cantidadNotas = 100;
+    private $cantidadNotas = 60;
 
     public function run(): void
     {

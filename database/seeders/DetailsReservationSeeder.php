@@ -2,71 +2,69 @@
 
 namespace Database\Seeders;
 
-use App\Models\Details_Reservation;
+use App\Models\DetailsReservation;
 use App\Models\Reservation;
 use App\Models\Table;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class DetailsReservationSeeder extends Seeder
 {
-    private $maxDetails = 70;
+
+    private $maxDetailsToCreate = 0;
 
     public function run(): void
     {
-        $reservas = Reservation::all();
+        if ($this->maxDetailsToCreate <= 0) {
+            $this->command->info('DetailsReservationSeeder está deshabilitado (maxDetailsToCreate = 0).');
+            return;
+        }
+
+        $reservasSinDetalles = Reservation::doesntHave('details_reservations')->get();
+        if ($reservasSinDetalles->isEmpty()) {
+            $this->command->info('No hay reservas sin detalles. No se crearon nuevos detalles.');
+            return;
+        }
+
         $mesas = Table::all();
-        $duracionHoras = 2;
-        $totalDetalles = 0;
+        if ($mesas->isEmpty()) {
+            $this->command->error('No hay mesas registradas. No se pueden asignar detalles.');
+            return;
+        }
 
-        $verificarDisponibilidad = function ($mesaId, $fecha, $horaInicio, $duracionHoras, $reservaActualId = null) {
-            $inicio = Carbon::parse($fecha . ' ' . $horaInicio);
-            $fin = $inicio->copy()->addHours($duracionHoras);
+        $detallesCreados = 0;
 
-            return !Details_Reservation::where('tables_id', $mesaId)
-                ->whereHas('reservations', function ($query) use ($fecha, $inicio, $fin, $duracionHoras, $reservaActualId) {
-                    $query->where('date', $fecha)
-                        ->where(function ($q) use ($inicio, $fin, $duracionHoras) {
-                            $q->whereRaw('EXTRACT(EPOCH FROM hour) < EXTRACT(EPOCH FROM ?::time)', [$fin->format('H:i:s')])
-                              ->whereRaw('EXTRACT(EPOCH FROM ?::time) < EXTRACT(EPOCH FROM hour) + ?', [
-                                  $inicio->format('H:i:s'),
-                                  $duracionHoras * 3600
-                              ]);
-                        });
-                    if ($reservaActualId) {
-                        $query->where('id', '!=', $reservaActualId);
-                    }
-                })->exists();
-        };
+        foreach ($reservasSinDetalles as $reserva) {
+            if ($detallesCreados >= $this->maxDetailsToCreate) break;
 
-        foreach ($reservas as $reserva) {
-            if ($totalDetalles >= $this->maxDetails) break;
+            $mesasOcupadas = DetailsReservation::whereHas('reservation', function ($query) use ($reserva) {
+                $query->where('date', $reserva->date)
+                      ->where('hour', $reserva->hour)
+                      ->whereNotIn('state', ['Cancelada', 'Completada'])
+                      ->where('id', '!=', $reserva->id);
+            })->pluck('tables_id')->toArray();
 
-            $numMesasDeseadas = rand(1, 3);
-            $mesasAsignadas = [];
+            $mesasDisponibles = $mesas->filter(fn($mesa) => !in_array($mesa->id, $mesasOcupadas));
 
-            for ($i = 0; $i < $numMesasDeseadas; $i++) {
-                if ($totalDetalles >= $this->maxDetails) break;
+            if ($mesasDisponibles->isEmpty()) {
+                $this->command->warn("Reserva ID {$reserva->id} no tiene mesas disponibles en esa fecha/hora.");
+                continue;
+            }
 
-                $mesasDisponibles = $mesas->filter(function ($mesa) use ($mesasAsignadas, $reserva, $verificarDisponibilidad, $duracionHoras) {
-                    if (in_array($mesa->id, $mesasAsignadas)) return false;
-                    return $verificarDisponibilidad($mesa->id, $reserva->date, $reserva->hour, $duracionHoras, $reserva->id);
-                });
+            $numMesas = rand(1, min(3, $mesasDisponibles->count()));
+            $mesasSeleccionadas = $mesasDisponibles->random($numMesas);
 
-                if ($mesasDisponibles->isEmpty()) {
-                    $this->command->warn("Reserva ID {$reserva->id}: no hay suficientes mesas disponibles.");
-                    break;
-                }
-
-                $mesa = $mesasDisponibles->random();
-                $mesasAsignadas[] = $mesa->id;
-
-                Details_Reservation::firstOrCreate([
+            foreach ($mesasSeleccionadas as $mesa) {
+                DetailsReservation::create([
                     'reservations_id' => $reserva->id,
                     'tables_id'       => $mesa->id,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ]);
-                $totalDetalles++;
+                $detallesCreados++;
+                if ($detallesCreados >= $this->maxDetailsToCreate) break;
             }
         }
+
+        $this->command->info("Se crearon {$detallesCreados} detalles para reservas que carecían de ellos.");
     }
 }

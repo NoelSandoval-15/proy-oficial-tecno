@@ -1,8 +1,8 @@
 APP_NAME=Laravel
 APP_ENV=local
 APP_KEY=base64:jYjfbsLuyB6oZjGbHqhAi1cPhnU2gXtT0NNGoe2TdVE=
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
+APP_DEBUG=false
+APP_URL=http://tecnoweb.org.bo/inf513/grupo17sc/churrasqueria
 
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en

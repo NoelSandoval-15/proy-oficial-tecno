@@ -32,13 +32,11 @@ class SalesNoteSeeder extends Seeder
         $fechaFin = Carbon::create(2026, 12, 31);
         $diasRango = $fechaInicio->diffInDays($fechaFin);
 
-        $totalNotas = 100;
+        $totalNotas = rand(30, 60);
         $notasCreadas = 0;
 
         $reservasUsadasIds = [];
-
         $mesasOcupadas = [];
-
         $clientesConReservaHoy = [];
 
         while ($notasCreadas < $totalNotas) {
@@ -63,10 +61,11 @@ class SalesNoteSeeder extends Seeder
                     ->exists();
                 if ($existe) continue;
 
-                $nota = Sales_Note::create([
+                Sales_Note::create([
                     'hour' => $hora,
                     'date' => $fecha,
                     'total_price' => rand(20, 800) + round(rand(0, 99) / 100, 2),
+                    'status' => rand(0, 1) ? 'pagado' : 'impagado', // <-- NUEVO
                     'users_admin_id' => $admin->id,
                     'users_client_id' => $clienteId,
                     'tables_id' => $mesaId,
@@ -103,6 +102,7 @@ class SalesNoteSeeder extends Seeder
                     'hour' => $hora,
                     'date' => $fecha,
                     'total_price' => rand(20, 800) + round(rand(0, 99) / 100, 2),
+                    'status' => rand(0, 1) ? 'pagado' : 'impagado', // <-- NUEVO
                     'users_admin_id' => $admin->id,
                     'users_client_id' => $cliente->id,
                     'tables_id' => null,
@@ -150,6 +150,7 @@ class SalesNoteSeeder extends Seeder
                     'hour' => $hora,
                     'date' => $fecha,
                     'total_price' => rand(20, 800) + round(rand(0, 99) / 100, 2),
+                    'status' => rand(0, 1) ? 'pagado' : 'impagado',
                     'users_admin_id' => $admin->id,
                     'users_client_id' => $cliente->id,
                     'tables_id' => $mesa->id,

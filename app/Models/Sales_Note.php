@@ -16,6 +16,7 @@ class Sales_Note extends Model
         'hour',
         'date',
         'total_price',
+        'status',
         'users_admin_id',
         'users_client_id',
         'tables_id',

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->time('hour');
             $table->date('date');
             $table->float('total_price');
+            $table->string('status');
+
 
             $table->unsignedBigInteger('users_admin_id');
             $table->unsignedBigInteger('users_client_id')->nullable();

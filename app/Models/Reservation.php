@@ -17,11 +17,17 @@ class Reservation extends Model
         'date',
         'state',
         'users_id',
+        'users_cliente_id',
+        
     ];
 
     public function users()
     {
         return $this->belongsTo(User::class, 'users_id');
+    }
+    public function users_cliente_id()
+    {
+        return $this->belongsTo(User::class, 'users_cliente_id');
     }
 
     public function details_reservations()

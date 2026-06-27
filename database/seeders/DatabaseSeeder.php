@@ -21,12 +21,13 @@ class DatabaseSeeder extends Seeder
             TableSeeder::class,
             ReservationSeeder::class,
             SalesNoteSeeder::class,
+            SalesNoteSeeder::class,
             SupplierSeeder::class,
             PurchaseNotesSeeder::class,
             InsumosNotesSeeder::class,
             
             SalesDetailSeeder::class,
-            DetailsReservationSeeder::class,
+            // DetailsReservationSeeder::class,
             DetailsPurchasesSeeder::class,
             DetailsInsumosSeeder::class,
 

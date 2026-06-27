@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('url_photo', 2048)->nullable();
             $table->integer('amount');
             $table->unsignedBigInteger('sub_categories_id');
-            $table->timestamps();
-
+            
             $table->foreign('sub_categories_id')->references('id')->on('sub_categories')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
