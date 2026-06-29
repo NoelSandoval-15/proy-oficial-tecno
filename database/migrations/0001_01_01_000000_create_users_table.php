@@ -16,7 +16,8 @@ return new class extends Migration
 
             $table->unsignedBigInteger('themes_id');
 
-            $table->rememberToken();
+            $table->rememberToken();            $table->foreign('users_id')->references('id')->on('users')->onDelete('cascade');
+
             $table->timestamps();
 
             $table->foreign('themes_id')

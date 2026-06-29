@@ -162,7 +162,7 @@ const submit = () => {
                         </label>
                     </div>
 
-                    <div class="text-sm">
+                    <!-- <div class="text-sm">
                         <Link
                             v-if="canResetPassword"
                             :href="route('password.request')"
@@ -170,7 +170,7 @@ const submit = () => {
                         >
                             ¿Olvidaste tu contraseña?
                         </Link>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Botón de inicio de sesión -->

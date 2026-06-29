@@ -84,7 +84,7 @@ class User extends Authenticatable
 
     public function insumos_notes()
     {
-        return $this->hasMany(Sales_Note::class, 'users_admin_id');
+        return $this->hasMany(Insumos_Notes::class, 'users_admin_id');
     }
 
     public function purchase_notes()

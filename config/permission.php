@@ -1,9 +1,5 @@
 <?php
 
-use Spatie\Permission\DefaultTeamResolver;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
-
 return [
 
     'models' => [
@@ -17,7 +13,7 @@ return [
          * `Spatie\Permission\Contracts\Permission` contract.
          */
 
-        'permission' => Permission::class,
+        'permission' => Spatie\Permission\Models\Permission::class,
 
         /*
          * When using the "HasRoles" trait from this package, we need to know which
@@ -28,21 +24,8 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
-        'role' => Role::class,
+        'role' => Spatie\Permission\Models\Role::class,
 
-        /*
-         * When using the "Teams" feature from this package, we need to know which
-         * Eloquent model should be used to retrieve your teams. Of course, it
-         * is often just the "Team" model but you may use whatever you like.
-         */
-        'team' => null,
-
-        /*
-         * When using the "HasModels" trait and passing raw IDs to syncModels,
-         * attachModels, or detachModels, this model class will be used to
-         * resolve those IDs. If null, defaults to the guard's model.
-         */
-        'default_model' => null,
     ],
 
     'table_names' => [
@@ -92,8 +75,8 @@ return [
         /*
          * Change this if you want to name the related pivots other than defaults
          */
-        'role_pivot_key' => null, // default 'role_id',
-        'permission_pivot_key' => null, // default 'permission_id',
+        'role_pivot_key' => null, //default 'role_id',
+        'permission_pivot_key' => null, //default 'permission_id',
 
         /*
          * Change this if you want to name the related model primary key other than
@@ -121,22 +104,12 @@ return [
     'register_permission_check_method' => true,
 
     /*
-     * When set to true, Laravel\Octane\Events\OperationTerminated event listener will be registered
-     * this will refresh permissions on every TickTerminated, TaskTerminated and RequestTerminated
+     * When set to true, the Spatie\Permission\Listeners\OctaneReloadPermissions listener will be registered
+     * on the Laravel\Octane\Events\OperationTerminated event, this will refresh permissions on every
+     * TickTerminated, TaskTerminated and RequestTerminated
      * NOTE: This should not be needed in most cases, but an Octane/Vapor combination benefited from it.
      */
     'register_octane_reset_listener' => false,
-
-    /*
-     * Events will fire when a role or permission is assigned/unassigned:
-     * \Spatie\Permission\Events\RoleAttachedEvent
-     * \Spatie\Permission\Events\RoleDetachedEvent
-     * \Spatie\Permission\Events\PermissionAttachedEvent
-     * \Spatie\Permission\Events\PermissionDetachedEvent
-     *
-     * To enable, set to true, and then create listeners to watch these events.
-     */
-    'events_enabled' => false,
 
     /*
      * Teams Feature.
@@ -149,11 +122,6 @@ return [
      */
 
     'teams' => false,
-
-    /*
-     * The class to use to resolve the permissions team id
-     */
-    'team_resolver' => DefaultTeamResolver::class,
 
     /*
      * Passport Client Credentials Grant
@@ -189,7 +157,7 @@ return [
      * The class to use for interpreting wildcard permissions.
      * If you need to modify delimiters, override the class and specify its name here.
      */
-    // 'wildcard_permission' => Spatie\Permission\WildcardPermission::class,
+    // 'permission.wildcard_permission' => Spatie\Permission\WildcardPermission::class,
 
     /* Cache-specific settings */
 
@@ -200,7 +168,7 @@ return [
          * When permissions or roles are updated the cache is flushed automatically.
          */
 
-        'expiration_time' => DateInterval::createFromDateString('24 hours'),
+        'expiration_time' => \DateInterval::createFromDateString('24 hours'),
 
         /*
          * The cache key used to store all permissions.
