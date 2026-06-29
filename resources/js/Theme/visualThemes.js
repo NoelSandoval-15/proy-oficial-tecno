@@ -1,15 +1,19 @@
 export const normalizeThemeName = (name = '') => {
-    const text = String(name).toLowerCase().trim();
+    const text = String(name)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
 
-    if (text === 'administrador') {
+    if (text === 'administrador' || text === 'admin') {
         return 'administrador';
     }
 
-    if (text === 'adultos' || text === 'cliente') {
+    if (text === 'adultos' || text === 'adulto' || text === 'cliente' || text === 'clientes') {
         return 'adultos';
     }
 
-    if (text === 'ni?o' || text === 'nino') {
+    if (text === 'nino' || text === 'ninos' || text === 'niño' || text === 'niños') {
         return 'nino';
     }
 
@@ -41,8 +45,8 @@ export const visualThemes = {
             '--app-accent': '#fb923c',
             '--app-hero': '#111111',
             '--app-hero-text': '#ffffff',
-            '--app-shadow': 'rgba(15, 23, 42, 0.10)'
-        }
+            '--app-shadow': 'rgba(15, 23, 42, 0.10)',
+        },
     },
 
     adultos: {
@@ -69,37 +73,41 @@ export const visualThemes = {
             '--app-accent': '#d97706',
             '--app-hero': '#070908',
             '--app-hero-text': '#fff7ed',
-            '--app-shadow': 'rgba(0, 0, 0, 0.35)'
-        }
+            '--app-shadow': 'rgba(0, 0, 0, 0.35)',
+        },
     },
 
     nino: {
         key: 'nino',
-        displayName: 'Nino',
-        shortName: 'Nino',
-        description: 'Experiencia familiar, amigable, verde y divertida.',
+        displayName: 'Niño',
+        shortName: 'Niño',
+        description: 'Experiencia familiar, colorida, divertida y llamativa para niños.',
         logo: 'Roberto Kids',
-        subtitle: 'Menu familiar',
+        subtitle: 'Menú divertido',
         mode: 'kids',
         variables: {
-            '--app-bg': '#f1ffc4',
-            '--app-sidebar': '#efffbd',
-            '--app-surface': '#dfead8',
-            '--app-surface-soft': '#eaffb9',
-            '--app-card': '#dce8d7',
-            '--app-border': '#c5d6b8',
-            '--app-text': '#2f5f63',
-            '--app-muted': '#52625a',
-            '--app-primary': '#2f6f73',
-            '--app-primary-dark': '#275b5e',
-            '--app-primary-soft': '#b8e7ee',
-            '--app-primary-text': '#2f5f63',
-            '--app-accent': '#aee4ee',
-            '--app-hero': '#e8fbb3',
-            '--app-hero-text': '#2f5f63',
-            '--app-shadow': 'rgba(47, 95, 99, 0.18)'
-        }
-    }
+            '--app-bg': '#fff7d6',
+            '--app-sidebar': '#fff0f6',
+            '--app-surface': '#ffffff',
+            '--app-surface-soft': '#ffe8f1',
+            '--app-card': '#ffffff',
+            '--app-border': '#ffc6dc',
+
+            '--app-text': '#3b245c',
+            '--app-muted': '#7c5a91',
+
+            '--app-primary': '#ff4fa3',
+            '--app-primary-dark': '#d93682',
+            '--app-primary-soft': '#ffd6ea',
+            '--app-primary-text': '#9d174d',
+
+            '--app-accent': '#38bdf8',
+            '--app-hero': '#7c3aed',
+            '--app-hero-text': '#ffffff',
+
+            '--app-shadow': 'rgba(255, 79, 163, 0.20)',
+        },
+    },
 };
 
 export const getVisualTheme = (themeName = 'Administrador') => {

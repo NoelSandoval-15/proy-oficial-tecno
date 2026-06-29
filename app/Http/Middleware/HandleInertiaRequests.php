@@ -63,7 +63,33 @@ class HandleInertiaRequests extends Middleware
 
             'visualThemes' => fn() => Theme::query()
                 ->orderBy('id')
-                ->get(['id', 'name']),
+                ->get(['id', 'name'])
+                ->map(function ($theme) {
+                    $normalized = str($theme->name)
+                        ->lower()
+                        ->ascii()
+                        ->trim()
+                        ->toString();
+
+                    if (in_array($normalized, ['cliente', 'clientes', 'adulto', 'adultos'], true)) {
+                        $key = 'adultos';
+                        $name = 'Adultos';
+                    } elseif (in_array($normalized, ['nino', 'ninos', 'niño', 'niños'], true)) {
+                        $key = 'nino';
+                        $name = 'Niño';
+                    } else {
+                        $key = 'administrador';
+                        $name = 'Administrador';
+                    }
+
+                    return [
+                        'id' => $theme->id,
+                        'key' => $key,
+                        'name' => $name,
+                    ];
+                })
+                ->unique('key')
+                ->values(),
 
             'routeVisits' => [
                 'current' => Cache::get('route_visits:' . $routeKey, 0),
