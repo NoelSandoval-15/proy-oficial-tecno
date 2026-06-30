@@ -7,6 +7,9 @@ use Inertia\Inertia;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\Administration\UserManagementController;
 use App\Http\Controllers\Administration\AuditLogController;
+use App\Http\Controllers\Product\CategorieController;
+use App\Http\Controllers\Product\ProductController;
+use App\Http\Controllers\Product\SubCategorieController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -77,9 +80,45 @@ Route::middleware(['auth', 'verified'])->prefix('administracion')->name('adminis
 
     Route::get('/bitacora/export/txt', [AuditLogController::class, 'exportTxt'])
         ->name('bitacora.export.txt');
-        
-    Route::get('/bitacora/data', [AuditLogController::class, 'data'])
-    ->name('bitacora.data');
-});
 
+    Route::get('/bitacora/data', [AuditLogController::class, 'data'])
+        ->name('bitacora.data');
+});
+Route::middleware([
+    'auth',
+    'verified',
+    'role:Master|Administrador|Mesero',
+])
+    ->prefix('productos')
+    ->name('products.')
+    ->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('/ajax/listar', [ProductController::class, 'ajax'])->name('ajax');
+        Route::get('/ajax/subcategorias', [SubCategorieController::class, 'ajax'])->name('sub-categories.ajax');
+
+        Route::get('/exportar', [ProductController::class, 'export'])->name('export');
+        Route::get('/exportar/excel', [ProductController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/exportar/pdf', [ProductController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/exportar/txt', [ProductController::class, 'exportTxt'])->name('export.txt');
+
+        Route::post('/', [ProductController::class, 'store'])->name('store');
+        Route::post('/{item}/actualizar', [ProductController::class, 'update'])->name('update');
+        Route::delete('/{item}', [ProductController::class, 'destroy'])->name('destroy');
+
+        Route::get('/categorias', [CategorieController::class, 'index'])->name('categories.index');
+        Route::get('/categorias/ajax/listar', [CategorieController::class, 'ajax'])->name('categories.ajax');
+
+        Route::get('/categorias/exportar', [CategorieController::class, 'export'])->name('categories.export');
+        Route::get('/categorias/exportar/excel', [CategorieController::class, 'exportExcel'])->name('categories.export.excel');
+        Route::get('/categorias/exportar/pdf', [CategorieController::class, 'exportPdf'])->name('categories.export.pdf');
+        Route::get('/categorias/exportar/txt', [CategorieController::class, 'exportTxt'])->name('categories.export.txt');
+
+        Route::post('/categorias', [CategorieController::class, 'store'])->name('categories.store');
+        Route::put('/categorias/{category}', [CategorieController::class, 'update'])->name('categories.update');
+        Route::delete('/categorias/{category}', [CategorieController::class, 'destroy'])->name('categories.destroy');
+
+        Route::post('/subcategorias', [SubCategorieController::class, 'store'])->name('sub-categories.store');
+        Route::post('/subcategorias/{subCategory}/actualizar', [SubCategorieController::class, 'update'])->name('sub-categories.update');
+        Route::delete('/subcategorias/{subCategory}', [SubCategorieController::class, 'destroy'])->name('sub-categories.destroy');
+    });
 require __DIR__ . '/auth.php';

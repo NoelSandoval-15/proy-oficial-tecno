@@ -4,6 +4,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import ThemeProvider from '@/Components/ThemeProvider.vue';
 import ThemeSelector from '@/Components/ThemeSelector.vue';
 import SidebarAdministrationMenu from '@/Components/SidebarAdministrationMenu.vue';
+import SidebarProductsMenu from '@/Components/SidebarProductsMenu.vue';
 import RouteLoadingIndicator from '@/Components/RouteLoadingIndicator.vue';
 import QuickCommandSearch from '@/Components/QuickCommandSearch.vue';
 
@@ -22,14 +23,22 @@ const page = usePage();
 
 const userMenuOpen = ref(false);
 
-const user = computed(() => page.props.auth.user);
+const user = computed(() => page.props.auth?.user ?? null);
+
+const userName = computed(() => {
+    return user.value?.name ?? 'Usuario';
+});
+
+const userEmail = computed(() => {
+    return user.value?.email ?? '';
+});
 
 const currentThemeName = computed(() => {
     return user.value?.theme?.name ?? 'Administrador';
 });
 
 const userInitial = computed(() => {
-    return user.value?.name?.charAt(0)?.toUpperCase() ?? 'U';
+    return userName.value?.charAt(0)?.toUpperCase() ?? 'U';
 });
 
 const userRoles = computed(() => {
@@ -37,7 +46,7 @@ const userRoles = computed(() => {
         user.value?.roles ??
         user.value?.role_names ??
         user.value?.roleNames ??
-        [];
+        null;
 
     if (Array.isArray(roles)) {
         return roles
@@ -63,7 +72,13 @@ const userRoles = computed(() => {
             .filter(Boolean);
     }
 
-    return [];
+    const singleRole =
+        user.value?.role ??
+        user.value?.user_role ??
+        user.value?.role_name ??
+        null;
+
+    return singleRole ? [singleRole] : [];
 });
 
 const currentUserRole = computed(() => {
@@ -73,6 +88,12 @@ const currentUserRole = computed(() => {
 const canSeeAdministration = computed(() => {
     return userRoles.value.some((role) => {
         return ['Master', 'Administrador'].includes(role);
+    });
+});
+
+const canSeeProducts = computed(() => {
+    return userRoles.value.some((role) => {
+        return ['Master', 'Administrador', 'Mesero'].includes(role);
     });
 });
 
@@ -108,6 +129,7 @@ const closeUserMenu = () => {
                 </h1>
 
                 <p class="mt-2 text-sm font-bold text-[var(--app-muted)]">
+                    Rol:
                     <span class="font-black text-[var(--app-text)]">
                         {{ currentUserRole }}
                     </span>
@@ -122,7 +144,12 @@ const closeUserMenu = () => {
                         ? 'border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
                         : 'border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
                 >
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                        class="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -135,6 +162,8 @@ const closeUserMenu = () => {
                 </Link>
 
                 <SidebarAdministrationMenu v-if="canSeeAdministration" />
+
+                <SidebarProductsMenu v-if="canSeeProducts" />
             </nav>
         </aside>
 
@@ -194,11 +223,11 @@ const closeUserMenu = () => {
 
                                 <div class="hidden min-w-0 text-left sm:block">
                                     <p class="max-w-[150px] truncate text-sm font-black text-[var(--app-text)]">
-                                        {{ user.name }}
+                                        {{ userName }}
                                     </p>
 
                                     <p class="max-w-[150px] truncate text-xs font-semibold text-[var(--app-muted)]">
-                                        {{ user.email }}
+                                        {{ userEmail }}
                                     </p>
 
                                     <p class="max-w-[150px] truncate text-xs font-black text-[var(--app-primary)]">
@@ -244,11 +273,11 @@ const closeUserMenu = () => {
 
                                         <div class="min-w-0">
                                             <p class="truncate text-base font-black text-[var(--app-text)]">
-                                                {{ user.name }}
+                                                {{ userName }}
                                             </p>
 
                                             <p class="truncate text-sm font-semibold text-[var(--app-muted)]">
-                                                {{ user.email }}
+                                                {{ userEmail }}
                                             </p>
 
                                             <p class="mt-1 text-xs font-black uppercase tracking-[0.14em] text-[var(--app-primary)]">
@@ -264,7 +293,12 @@ const closeUserMenu = () => {
                                         class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-[var(--app-text)] transition hover:bg-[var(--app-surface-soft)]"
                                         @click="closeUserMenu"
                                     >
-                                        <svg class="h-5 w-5 text-[var(--app-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg
+                                            class="h-5 w-5 text-[var(--app-primary)]"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
                                             <path
                                                 stroke-linecap="round"
                                                 stroke-linejoin="round"
@@ -283,7 +317,12 @@ const closeUserMenu = () => {
                                         class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-red-500 transition hover:bg-red-500/10"
                                         @click="closeUserMenu"
                                     >
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg
+                                            class="h-5 w-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
                                             <path
                                                 stroke-linecap="round"
                                                 stroke-linejoin="round"
@@ -330,7 +369,12 @@ const closeUserMenu = () => {
                     <div
                         class="flex items-center gap-2 rounded-2xl bg-[var(--app-surface-soft)] px-4 py-2 font-black text-[var(--app-text)]"
                     >
-                        <svg class="h-4 w-4 text-[var(--app-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                            class="h-4 w-4 text-[var(--app-primary)]"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
