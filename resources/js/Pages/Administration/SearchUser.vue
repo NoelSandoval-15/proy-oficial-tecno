@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import SidebarLayout from '@/Layouts/SidebarLayout.vue';
 
@@ -26,6 +26,29 @@ const props = defineProps({
 
 const search = ref(props.filters.search ?? '');
 
+const displayName = (user) => {
+    const profileName = user?.profile?.name;
+    const profileLastName = user?.profile?.last_name;
+
+    if (profileName || profileLastName) {
+        return `${profileName ?? ''} ${profileLastName ?? ''}`.trim();
+    }
+
+    return user?.name ?? 'Sin nombre';
+};
+
+const initials = (user) => {
+    return displayName(user).charAt(0).toUpperCase();
+};
+
+const selectedDisplayName = computed(() => {
+    return props.selectedUser ? displayName(props.selectedUser) : '';
+});
+
+const selectedInitial = computed(() => {
+    return props.selectedUser ? initials(props.selectedUser) : 'U';
+});
+
 const runSearch = () => {
     router.get(
         route('administracion.usuarios.buscar'),
@@ -34,6 +57,21 @@ const runSearch = () => {
         },
         {
             preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        }
+    );
+};
+
+const clearSearch = () => {
+    search.value = '';
+
+    router.get(
+        route('administracion.usuarios.buscar'),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
             replace: true,
         }
     );
@@ -48,6 +86,7 @@ const selectUser = (userId) => {
         },
         {
             preserveState: true,
+            preserveScroll: true,
             replace: true,
         }
     );
@@ -55,55 +94,92 @@ const selectUser = (userId) => {
 </script>
 
 <template>
-
     <Head title="Buscar usuario" />
 
-    <SidebarLayout title="Buscar usuario"
-        subtitle="Consulta empleados, clientes y administradores con estadísticas importantes.">
+    <SidebarLayout
+        title="Buscar usuario"
+        subtitle="Consulta empleados, clientes y administradores con estadísticas importantes."
+    >
         <section class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm">
-            <form class="flex flex-col gap-4 md:flex-row" @submit.prevent="runSearch">
-                <div class="relative flex-1">
-                    <svg class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--app-primary)]" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                            d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            <form class="grid gap-4 lg:grid-cols-[1fr_auto_auto]" @submit.prevent="runSearch">
+                <div class="relative">
+                    <svg
+                        class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--app-primary)]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.8"
+                            d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
+                        />
                     </svg>
 
-                    <input v-model="search" type="text" placeholder="Buscar por nombre, correo, CI o teléfono..."
-                        class="w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] py-3 pl-12 text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]" />
+                    <input
+                        v-model="search"
+                        type="text"
+                        placeholder="Buscar por nombre, apellido, correo, CI, teléfono o una acción del sistema..."
+                        class="w-full rounded-2xl border-[var(--app-border)] bg-[var(--app-surface-soft)] py-3 pl-12 text-[var(--app-text)] focus:border-[var(--app-primary)] focus:ring-[var(--app-primary)]"
+                    />
                 </div>
 
-                <button type="submit"
-                    class="rounded-2xl bg-[var(--app-primary)] px-6 py-3 text-sm font-black text-white">
+                <button
+                    type="submit"
+                    class="rounded-2xl bg-[var(--app-primary)] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:opacity-90"
+                >
                     Buscar
+                </button>
+
+                <button
+                    type="button"
+                    class="rounded-2xl border border-[var(--app-border)] bg-[var(--app-card)] px-6 py-3 text-sm font-black text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
+                    @click="clearSearch"
+                >
+                    Limpiar
                 </button>
             </form>
         </section>
 
         <section class="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
-            <div
-                class="overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm">
+            <div class="overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm">
                 <div class="border-b border-[var(--app-border)] px-6 py-5">
                     <h2 class="text-xl font-black text-[var(--app-text)]">
                         Resultados
                     </h2>
+
                     <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
                         Selecciona un usuario para ver su análisis.
                     </p>
                 </div>
 
-                <div class="divide-y divide-[var(--app-border)]">
-                    <button v-for="user in users" :key="user.id" type="button"
+                <div class="max-h-[720px] overflow-y-auto divide-y divide-[var(--app-border)]">
+                    <button
+                        v-for="user in users"
+                        :key="user.id"
+                        type="button"
                         class="group flex w-full items-center gap-4 px-6 py-4 text-left transition hover:bg-[var(--app-surface-soft)]"
-                        @click="selectUser(user.id)">
+                        :class="selectedUser?.id === user.id ? 'bg-[var(--app-primary-soft)]' : ''"
+                        @click="selectUser(user.id)"
+                    >
+                        <img
+                            v-if="user.profile?.url_photo"
+                            :src="user.profile.url_photo"
+                            :alt="displayName(user)"
+                            class="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm"
+                        />
+
                         <div
-                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary)] text-base font-black text-white shadow-sm">
-                            {{ user.name.charAt(0).toUpperCase() }}
+                            v-else
+                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary)] text-base font-black text-white shadow-sm"
+                        >
+                            {{ initials(user) }}
                         </div>
 
                         <div class="min-w-0 flex-1">
                             <p class="truncate font-black text-[var(--app-text)]">
-                                {{ user.name }}
+                                {{ displayName(user) }}
                             </p>
 
                             <p class="truncate text-sm font-semibold text-[var(--app-muted)]">
@@ -111,62 +187,92 @@ const selectUser = (userId) => {
                             </p>
 
                             <div class="mt-2 flex flex-wrap gap-2">
-                                <span
-                                    class="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-[11px] font-black text-[var(--app-primary-text)]">
+                                <span class="rounded-full bg-[var(--app-primary-soft)] px-3 py-1 text-[11px] font-black text-[var(--app-primary-text)]">
                                     {{ user.roles?.[0] ?? 'Sin rol' }}
                                 </span>
 
-                                <span
-                                    class="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-[11px] font-black text-[var(--app-text)]">
-                                    {{ user.theme ?? 'Sin tema' }}
+                                <span class="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-[11px] font-black text-[var(--app-text)]">
+                                    CI: {{ user.profile?.ci ?? 'Sin CI' }}
                                 </span>
                             </div>
                         </div>
 
-                        <svg class="h-5 w-5 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        <svg
+                            class="h-5 w-5 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5l7 7-7 7"
+                            />
                         </svg>
                     </button>
 
                     <div v-if="users.length === 0" class="px-6 py-12 text-center">
-                        <p class="font-black text-[var(--app-text)]">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="1.8"
+                                    d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
+                                />
+                            </svg>
+                        </div>
+
+                        <p class="mt-4 font-black text-[var(--app-text)]">
                             No hay resultados
                         </p>
+
                         <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
-                            Intenta con otro nombre, correo o CI.
+                            Intenta con otro nombre, correo, CI o teléfono.
                         </p>
                     </div>
                 </div>
             </div>
 
             <div class="space-y-6">
-                <section v-if="selectedUser"
-                    class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm">
-                    <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <section
+                    v-if="selectedUser"
+                    class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm"
+                >
+                    <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[var(--app-primary)]/20 blur-3xl"></div>
+
+                    <div class="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                         <div class="flex items-center gap-4">
+                            <img
+                                v-if="selectedUser.profile?.url_photo"
+                                :src="selectedUser.profile.url_photo"
+                                :alt="selectedDisplayName"
+                                class="h-20 w-20 rounded-[1.5rem] object-cover shadow-sm"
+                            />
+
                             <div
-                                class="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--app-primary)] text-2xl font-black text-white">
-                                {{ selectedUser.name.charAt(0).toUpperCase() }}
+                                v-else
+                                class="flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-[var(--app-primary)] text-3xl font-black text-white shadow-sm"
+                            >
+                                {{ selectedInitial }}
                             </div>
 
                             <div>
                                 <h2 class="text-2xl font-black text-[var(--app-text)]">
-                                    {{ selectedUser.name }}
+                                    {{ selectedDisplayName }}
                                 </h2>
 
                                 <p class="text-sm font-semibold text-[var(--app-muted)]">
                                     {{ selectedUser.email }}
                                 </p>
 
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    <span
-                                        class="rounded-xl bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-black text-[var(--app-primary-text)]">
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <span class="rounded-xl bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-black text-[var(--app-primary-text)]">
                                         {{ selectedUser.roles?.[0] ?? 'Sin rol' }}
                                     </span>
 
-                                    <span
-                                        class="rounded-xl bg-[var(--app-surface-soft)] px-3 py-1 text-xs font-black text-[var(--app-text)]">
+                                    <span class="rounded-xl bg-[var(--app-surface-soft)] px-3 py-1 text-xs font-black text-[var(--app-text)]">
                                         {{ selectedUser.theme ?? 'Sin tema' }}
                                     </span>
                                 </div>
@@ -189,15 +295,20 @@ const selectUser = (userId) => {
                     </div>
                 </section>
 
-                <section v-if="stats"
-                    class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm">
+                <section
+                    v-if="stats"
+                    class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm"
+                >
                     <h3 class="text-xl font-black text-[var(--app-text)]">
                         {{ stats.title }}
                     </h3>
 
                     <div class="mt-6 grid gap-4 md:grid-cols-3">
-                        <div v-for="card in stats.cards" :key="card.label"
-                            class="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-5">
+                        <div
+                            v-for="card in stats.cards"
+                            :key="card.label"
+                            class="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-5"
+                        >
                             <p class="text-sm font-black text-[var(--app-muted)]">
                                 {{ card.label }}
                             </p>
@@ -209,8 +320,10 @@ const selectUser = (userId) => {
                     </div>
                 </section>
 
-                <section v-if="stats"
-                    class="overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm">
+                <section
+                    v-if="stats"
+                    class="overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-sm"
+                >
                     <div class="border-b border-[var(--app-border)] px-6 py-5">
                         <h3 class="text-xl font-black text-[var(--app-text)]">
                             Últimos movimientos
@@ -220,8 +333,7 @@ const selectUser = (userId) => {
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[700px] text-left">
                             <thead>
-                                <tr
-                                    class="border-b border-[var(--app-border)] bg-[var(--app-surface-soft)] text-xs font-black uppercase tracking-[0.16em] text-[var(--app-muted)]">
+                                <tr class="border-b border-[var(--app-border)] bg-[var(--app-surface-soft)] text-xs font-black uppercase tracking-[0.16em] text-[var(--app-muted)]">
                                     <th class="px-6 py-4">ID</th>
                                     <th class="px-6 py-4">Fecha</th>
                                     <th class="px-6 py-4">Hora</th>
@@ -232,8 +344,11 @@ const selectUser = (userId) => {
                             </thead>
 
                             <tbody class="divide-y divide-[var(--app-border)]">
-                                <tr v-for="item in stats.recent" :key="item.id"
-                                    class="transition hover:bg-[var(--app-surface-soft)]">
+                                <tr
+                                    v-for="item in stats.recent"
+                                    :key="item.id"
+                                    class="transition hover:bg-[var(--app-surface-soft)]"
+                                >
                                     <td class="px-6 py-5 font-black text-[var(--app-text)]">
                                         #{{ item.id }}
                                     </td>
@@ -255,16 +370,17 @@ const selectUser = (userId) => {
                                     </td>
 
                                     <td class="px-6 py-5">
-                                        <span
-                                            class="rounded-xl bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-black text-[var(--app-primary-text)]">
+                                        <span class="rounded-xl bg-[var(--app-primary-soft)] px-3 py-1 text-xs font-black text-[var(--app-primary-text)]">
                                             {{ item.status ?? 'Registrado' }}
                                         </span>
                                     </td>
                                 </tr>
 
                                 <tr v-if="stats.recent.length === 0">
-                                    <td colspan="6"
-                                        class="px-6 py-10 text-center text-sm font-bold text-[var(--app-muted)]">
+                                    <td
+                                        colspan="6"
+                                        class="px-6 py-10 text-center text-sm font-bold text-[var(--app-muted)]"
+                                    >
                                         No hay movimientos registrados todavía.
                                     </td>
                                 </tr>
@@ -273,9 +389,22 @@ const selectUser = (userId) => {
                     </div>
                 </section>
 
-                <section v-if="!selectedUser"
-                    class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-12 text-center shadow-sm">
-                    <p class="text-2xl font-black text-[var(--app-text)]">
+                <section
+                    v-if="!selectedUser"
+                    class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-12 text-center shadow-sm"
+                >
+                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                        <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0"
+                            />
+                        </svg>
+                    </div>
+
+                    <p class="mt-5 text-2xl font-black text-[var(--app-text)]">
                         Selecciona un usuario
                     </p>
 

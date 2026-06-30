@@ -54,6 +54,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'themes_id' => $user->themes_id,
+                    'roles' => $user->getRoleNames()->values(),
                     'theme' => $user->theme ? [
                         'id' => $user->theme->id,
                         'name' => $user->theme->name,
@@ -61,6 +62,10 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
 
+            'roles' => $request->user() && method_exists($request->user(), 'getRoleNames')
+                ? $request->user()->getRoleNames()->values()
+                : [],
+                
             'visualThemes' => fn() => Theme::query()
                 ->orderBy('id')
                 ->get(['id', 'name'])

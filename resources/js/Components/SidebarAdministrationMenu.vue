@@ -1,9 +1,46 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const page = usePage();
 const open = ref(true);
+
+const menuItems = [
+    {
+        label: 'Buscar usuario',
+        routeName: 'administracion.usuarios.buscar',
+        path: '/administracion/usuarios/buscar',
+        icon: 'M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z',
+    },
+    {
+        label: 'Bitácora',
+        routeName: 'administracion.bitacora.index',
+        path: '/administracion/bitacora',
+        icon: 'M12 8v5l3 2m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+        label: 'Administradores',
+        routeName: 'administracion.administradores.index',
+        path: '/administracion/administradores',
+        icon: 'M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4z',
+    },
+    {
+        label: 'Empleados',
+        routeName: 'administracion.empleados.index',
+        path: '/administracion/empleados',
+        icon: 'M16 11a4 4 0 10-8 0m8 0a4 4 0 01-8 0m8 0c2.21 0 4 1.79 4 4v2H4v-2c0-2.21 1.79-4 4-4',
+    },
+    {
+        label: 'Clientes',
+        routeName: 'administracion.clientes.index',
+        path: '/administracion/clientes',
+        icon: 'M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m8-4a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z',
+    },
+];
+
+const sectionActive = computed(() => {
+    return page.url.startsWith('/administracion');
+});
 
 const isActive = (path) => {
     return page.url === path || page.url.startsWith(`${path}/`);
@@ -16,7 +53,7 @@ onMounted(() => {
         open.value = saved === 'true';
     }
 
-    if (page.url.startsWith('/administracion')) {
+    if (sectionActive.value) {
         open.value = true;
     }
 });
@@ -30,18 +67,27 @@ watch(open, (value) => {
     <div class="mt-3">
         <button
             type="button"
-            class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-black text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
+            class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition"
+            :class="sectionActive
+                ? 'bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
+                : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
             @click="open = !open"
         >
             <span class="flex items-center gap-3">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="1.8"
-                        d="M4 6h16M4 12h16M4 18h10"
+                        d="M4 6a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM13 6a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2h-3a2 2 0 01-2-2V6zM4 15a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2H6a2 2 0 01-2-2v-3zM13 15a2 2 0 012-2h3a2 2 0 012 2v3a2 2 0 01-2 2h-3a2 2 0 01-2-2v-3z"
                     />
                 </svg>
+
                 Administración
             </span>
 
@@ -52,49 +98,42 @@ watch(open, (value) => {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
             >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                />
             </svg>
         </button>
 
-        <div v-if="open" class="mt-2 space-y-1 pl-3">
+        <div v-if="open" class="mt-2 space-y-1 pl-2">
             <Link
-                :href="route('administracion.empleados.index')"
-                class="flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition"
-                :class="isActive('/administracion/empleados')
-                    ? 'border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
-                    : 'border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
+                v-for="item in menuItems"
+                :key="item.path"
+                :href="route(item.routeName)"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold transition"
+                :class="isActive(item.path)
+                    ? 'bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
+                    : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
             >
-                Empleados
-            </Link>
+                <svg
+                    class="h-5 w-5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        :d="item.icon"
+                    />
+                </svg>
 
-            <Link
-                :href="route('administracion.clientes.index')"
-                class="flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition"
-                :class="isActive('/administracion/clientes')
-                    ? 'border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
-                    : 'border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
-            >
-                Clientes
-            </Link>
-
-            <Link
-                :href="route('administracion.administradores.index')"
-                class="flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition"
-                :class="isActive('/administracion/administradores')
-                    ? 'border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
-                    : 'border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
-            >
-                Administradores
-            </Link>
-
-            <Link
-                :href="route('administracion.usuarios.buscar')"
-                class="flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition"
-                :class="isActive('/administracion/usuarios/buscar')
-                    ? 'border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
-                    : 'border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
-            >
-                Buscar usuario
+                <span class="truncate">
+                    {{ item.label }}
+                </span>
             </Link>
         </div>
     </div>

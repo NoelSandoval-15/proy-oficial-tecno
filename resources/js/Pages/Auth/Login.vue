@@ -22,7 +22,10 @@ const form = useForm({
 });
 
 const submit = () => {
+    form.email = String(form.email || '').trim();
+
     form.post(route('login'), {
+        preserveScroll: true,
         onFinish: () => form.reset('password'),
     });
 };
@@ -33,12 +36,10 @@ const submit = () => {
         <Head title="Iniciar sesión" />
 
         <div class="w-full max-w-md space-y-8">
-            <!-- Logo / Marca -->
             <div class="text-center">
                 <div
                     class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-lg"
                 >
-                    <!-- Icono de parrilla/fuego -->
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="h-10 w-10 text-white"
@@ -50,38 +51,34 @@ const submit = () => {
                         />
                     </svg>
                 </div>
-                <h2
-                    class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900"
-                >
+
+                <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
                     Churrasquería
                 </h2>
+
                 <p class="mt-2 text-center text-sm text-gray-600">
                     Ingresa a tu cuenta para continuar
                 </p>
             </div>
 
-            <!-- Mensaje de estado -->
             <div
                 v-if="status"
-                class="rounded-lg bg-green-50 p-4 text-sm font-medium text-green-700 border border-green-200"
+                class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-700"
             >
                 {{ status }}
             </div>
 
-            <!-- Formulario -->
-            <form class="space-y-6" @submit.prevent="submit">
+            <form class="space-y-6" novalidate @submit.prevent="submit">
                 <div class="space-y-4">
-                    <!-- Email -->
                     <div>
                         <InputLabel
                             for="email"
                             value="Correo electrónico"
                             class="text-sm font-medium text-gray-700"
                         />
+
                         <div class="relative mt-1">
-                            <div
-                                class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-                            >
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                 <svg
                                     class="h-5 w-5 text-gray-400"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -96,31 +93,31 @@ const submit = () => {
                                     />
                                 </svg>
                             </div>
+
                             <TextInput
                                 id="email"
-                                type="email"
+                                v-model="form.email"
+                                type="text"
+                                inputmode="email"
                                 class="block w-full rounded-lg border-gray-300 pl-10 shadow-sm transition duration-150 ease-in-out focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50"
                                 placeholder="grupo017sc@tecnoweb.org.bo"
-                                v-model="form.email"
-                                required
                                 autofocus
                                 autocomplete="username"
                             />
                         </div>
+
                         <InputError class="mt-2" :message="form.errors.email" />
                     </div>
 
-                    <!-- Contraseña -->
                     <div>
                         <InputLabel
                             for="password"
                             value="Contraseña"
                             class="text-sm font-medium text-gray-700"
                         />
+
                         <div class="relative mt-1">
-                            <div
-                                class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-                            >
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                 <svg
                                     class="h-5 w-5 text-gray-400"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -134,21 +131,21 @@ const submit = () => {
                                     />
                                 </svg>
                             </div>
+
                             <TextInput
                                 id="password"
+                                v-model="form.password"
                                 type="password"
                                 class="block w-full rounded-lg border-gray-300 pl-10 shadow-sm transition duration-150 ease-in-out focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50"
                                 placeholder="••••••••"
-                                v-model="form.password"
-                                required
                                 autocomplete="current-password"
                             />
                         </div>
+
                         <InputError class="mt-2" :message="form.errors.password" />
                     </div>
                 </div>
 
-                <!-- Recordarme y olvidé contraseña -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <Checkbox
@@ -157,34 +154,20 @@ const submit = () => {
                             v-model:checked="form.remember"
                             class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                         />
+
                         <label for="remember" class="ml-2 block text-sm text-gray-700">
                             Recordarme
                         </label>
                     </div>
-
-                    <!-- <div class="text-sm">
-                        <Link
-                            v-if="canResetPassword"
-                            :href="route('password.request')"
-                            class="font-medium text-orange-600 transition duration-150 ease-in-out hover:text-orange-500"
-                        >
-                            ¿Olvidaste tu contraseña?
-                        </Link>
-                    </div> -->
                 </div>
 
-                <!-- Botón de inicio de sesión -->
                 <div>
                     <button
                         type="submit"
                         class="group relative flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition duration-150 ease-in-out hover:from-orange-600 hover:to-red-600 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         :disabled="form.processing"
                     >
-                        <!-- Icono -->
-                        <span
-                            v-if="!form.processing"
-                            class="absolute left-4"
-                        >
+                        <span v-if="!form.processing" class="absolute left-4">
                             <svg
                                 class="h-5 w-5 text-orange-200"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -198,11 +181,8 @@ const submit = () => {
                                 />
                             </svg>
                         </span>
-                        <!-- Spinner -->
-                        <span
-                            v-else
-                            class="absolute left-4"
-                        >
+
+                        <span v-else class="absolute left-4">
                             <svg
                                 class="h-5 w-5 animate-spin text-white"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -217,6 +197,7 @@ const submit = () => {
                                     stroke="currentColor"
                                     stroke-width="4"
                                 ></circle>
+
                                 <path
                                     class="opacity-75"
                                     fill="currentColor"
@@ -224,14 +205,15 @@ const submit = () => {
                                 ></path>
                             </svg>
                         </span>
+
                         {{ form.processing ? 'Ingresando...' : 'Iniciar sesión' }}
                     </button>
                 </div>
             </form>
 
-            <!-- Enlace a registro -->
             <p class="text-center text-sm text-gray-600">
                 ¿No tienes una cuenta?
+
                 <Link
                     :href="route('register')"
                     class="font-medium text-orange-600 transition duration-150 ease-in-out hover:text-orange-500"

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\Administration\UserManagementController;
+use App\Http\Controllers\Administration\AuditLogController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -64,6 +65,21 @@ Route::middleware(['auth', 'verified'])->prefix('administracion')->name('adminis
 
     Route::get('/usuarios/export/pdf', [UserManagementController::class, 'exportPdf'])
         ->name('usuarios.export.pdf');
+
+    Route::get('/bitacora', [AuditLogController::class, 'index'])
+        ->name('bitacora.index');
+
+    Route::get('/bitacora/export/csv', [AuditLogController::class, 'exportCsv'])
+        ->name('bitacora.export.csv');
+
+    Route::get('/bitacora/export/pdf', [AuditLogController::class, 'exportPdf'])
+        ->name('bitacora.export.pdf');
+
+    Route::get('/bitacora/export/txt', [AuditLogController::class, 'exportTxt'])
+        ->name('bitacora.export.txt');
+        
+    Route::get('/bitacora/data', [AuditLogController::class, 'data'])
+    ->name('bitacora.data');
 });
 
 require __DIR__ . '/auth.php';

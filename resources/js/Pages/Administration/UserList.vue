@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import SidebarLayout from '@/Layouts/SidebarLayout.vue';
 
@@ -138,6 +138,14 @@ const openCreate = () => {
     resetForm();
     modalOpen.value = true;
 };
+
+onMounted(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('action') === 'create') {
+        openCreate();
+    }
+});
 
 const openEdit = (user) => {
     modalMode.value = 'edit';
