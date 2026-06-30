@@ -17,6 +17,11 @@ class Sales_Detail extends Model
         'amount',
     ];
 
+    protected $casts = [
+        'price_sale' => 'float',
+        'amount' => 'integer',
+    ];
+
     public function sales_note()
     {
         return $this->belongsTo(Sales_Note::class, 'sales_notes_id');

@@ -13,7 +13,8 @@ use App\Http\Controllers\Product\SubCategorieController;
 use App\Http\Controllers\Reservation\TableController;
 use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\ClientReservationController;
-
+use App\Http\Controllers\Order\AdminOrderController;
+use App\Http\Controllers\Order\ClientOrderController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -127,48 +128,79 @@ Route::middleware([
     });
 
 
-    Route::middleware(['auth'])->group(function () {
-        Route::middleware(['role:Master|Administrador|Mesero'])->group(function () {
-            Route::resource('/mesas', TableController::class)
-                ->parameters(['mesas' => 'table'])
-                ->except(['create', 'show', 'edit'])
-                ->names('reservation.tables');
+Route::middleware(['auth'])->group(function () {
+    Route::middleware(['role:Master|Administrador|Mesero'])->group(function () {
+        Route::resource('/mesas', TableController::class)
+            ->parameters(['mesas' => 'table'])
+            ->except(['create', 'show', 'edit'])
+            ->names('reservation.tables');
 
-            Route::get('/admin/reservas', [AdminReservationController::class, 'index'])
-                ->name('admin.reservations.index');
+        Route::get('/admin/reservas', [AdminReservationController::class, 'index'])
+            ->name('admin.reservations.index');
 
-            Route::get('/admin/reservas/clientes/buscar', [AdminReservationController::class, 'searchClients'])
-                ->name('admin.reservations.search-clients');
+        Route::get('/admin/reservas/clientes/buscar', [AdminReservationController::class, 'searchClients'])
+            ->name('admin.reservations.search-clients');
 
-            Route::get('/admin/reservas/mesas-disponibles/buscar', [AdminReservationController::class, 'availableTables'])
-                ->name('admin.reservations.available-tables');
+        Route::get('/admin/reservas/mesas-disponibles/buscar', [AdminReservationController::class, 'availableTables'])
+            ->name('admin.reservations.available-tables');
 
-            Route::get('/admin/reservas/mesas-disponibles/ahora', [AdminReservationController::class, 'availableNowTables'])
-                ->name('admin.reservations.available-now-tables');
+        Route::get('/admin/reservas/mesas-disponibles/ahora', [AdminReservationController::class, 'availableNowTables'])
+            ->name('admin.reservations.available-now-tables');
 
-            Route::post('/admin/reservas', [AdminReservationController::class, 'store'])
-                ->name('admin.reservations.store');
+        Route::post('/admin/reservas', [AdminReservationController::class, 'store'])
+            ->name('admin.reservations.store');
 
-            Route::put('/admin/reservas/{reservation}', [AdminReservationController::class, 'update'])
-                ->name('admin.reservations.update');
+        Route::put('/admin/reservas/{reservation}', [AdminReservationController::class, 'update'])
+            ->name('admin.reservations.update');
 
-            Route::patch('/admin/reservas/{reservation}/estado', [AdminReservationController::class, 'changeState'])
-                ->name('admin.reservations.change-state');
-        });
-
-        Route::middleware(['role:Cliente'])->group(function () {
-            Route::get('/cliente/reservas', [ClientReservationController::class, 'index'])
-                ->name('client.reservations.index');
-
-            Route::post('/cliente/reservas', [ClientReservationController::class, 'store'])
-                ->name('client.reservations.store');
-
-            Route::patch('/cliente/reservas/{reservation}/cancelar', [ClientReservationController::class, 'cancel'])
-                ->name('client.reservations.cancel');
-
-            Route::get('/cliente/reservas/mesas-disponibles/buscar', [ClientReservationController::class, 'availableTables'])
-                ->name('client.reservations.available-tables');
-        });
+        Route::patch('/admin/reservas/{reservation}/estado', [AdminReservationController::class, 'changeState'])
+            ->name('admin.reservations.change-state');
     });
+
+    Route::middleware(['role:Cliente'])->group(function () {
+        Route::get('/cliente/reservas', [ClientReservationController::class, 'index'])
+            ->name('client.reservations.index');
+
+        Route::post('/cliente/reservas', [ClientReservationController::class, 'store'])
+            ->name('client.reservations.store');
+
+        Route::patch('/cliente/reservas/{reservation}/cancelar', [ClientReservationController::class, 'cancel'])
+            ->name('client.reservations.cancel');
+
+        Route::get('/cliente/reservas/mesas-disponibles/buscar', [ClientReservationController::class, 'availableTables'])
+            ->name('client.reservations.available-tables');
+    });
+});
+
+Route::middleware(['role:Master|Administrador|Mesero'])->group(function () {
+    Route::get('/admin/pedidos', [AdminOrderController::class, 'index'])
+        ->name('admin.orders.index');
+
+    Route::get('/admin/pedidos/clientes/buscar', [AdminOrderController::class, 'searchClients'])
+        ->name('admin.orders.search-clients');
+
+    Route::post('/admin/pedidos', [AdminOrderController::class, 'store'])
+        ->name('admin.orders.store');
+
+    Route::put('/admin/pedidos/{order}', [AdminOrderController::class, 'update'])
+        ->name('admin.orders.update');
+
+    Route::patch('/admin/pedidos/{order}/estado', [AdminOrderController::class, 'changeStatus'])
+        ->name('admin.orders.change-status');
+
+    Route::patch('/admin/pedidos/{order}/cancelar', [AdminOrderController::class, 'cancel'])
+        ->name('admin.orders.cancel');
+});
+
+Route::middleware(['role:Cliente'])->group(function () {
+    Route::get('/cliente/pedidos', [ClientOrderController::class, 'index'])
+        ->name('client.orders.index');
+
+    Route::post('/cliente/pedidos', [ClientOrderController::class, 'store'])
+        ->name('client.orders.store');
+
+    Route::patch('/cliente/pedidos/{order}/cancelar', [ClientOrderController::class, 'cancel'])
+        ->name('client.orders.cancel');
+});
 
 require __DIR__ . '/auth.php';

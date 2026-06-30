@@ -58,6 +58,15 @@ const rolesText = computed(() => {
     return currentRoles.value.length ? currentRoles.value.join(', ') : 'Sin rol';
 });
 
+const today = computed(() => {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+});
+
 const routeOrNull = (routeName) => {
     try {
         if (typeof route !== 'function') {
@@ -524,6 +533,168 @@ const baseActions = computed(() => {
             icon: 'reservation',
             keywords: ['reservar', 'reservar mesa', 'nueva reserva', 'crear reserva', 'hacer reserva'],
         }),
+
+        makeAction({
+            key: 'admin-orders-index',
+            title: 'Visualizar pedidos',
+            description: 'Gestionar pedidos internos, ventas, mesas, mostrador y pedidos para llevar.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            icon: 'orders',
+            keywords: ['pedidos', 'pedido', 'ventas', 'venta', 'comanda', 'comandas', 'atención', 'mesero'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-create',
+            title: 'Nuevo pedido interno',
+            description: 'Registrar pedido de mesa, mostrador o para llevar con productos por categoría.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                action: 'create',
+            },
+            icon: 'cart',
+            keywords: ['crear pedido', 'nuevo pedido', 'registrar pedido', 'hacer pedido', 'anotar pedido'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-pending',
+            title: 'Pedidos pendientes',
+            description: 'Ver pedidos que todavía esperan atención o confirmación.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                status: 'Pendiente',
+            },
+            icon: 'clock',
+            keywords: ['pedidos pendientes', 'pendiente', 'sin atender', 'por atender'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-preparing',
+            title: 'Pedidos en preparación',
+            description: 'Ver pedidos que cocina o atención está preparando.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                status: 'En preparación',
+            },
+            icon: 'chef',
+            keywords: ['preparacion', 'preparación', 'en preparación', 'cocina', 'cocinando'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-ready',
+            title: 'Pedidos listos',
+            description: 'Ver pedidos listos para entregar al cliente.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                status: 'Listo',
+            },
+            icon: 'ready',
+            keywords: ['listo', 'listos', 'pedido listo', 'entregar', 'para entregar'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-delivered',
+            title: 'Pedidos entregados',
+            description: 'Ver pedidos que ya fueron entregados.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                status: 'Entregado',
+            },
+            icon: 'ready',
+            keywords: ['entregado', 'entregados', 'servido', 'servidos'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-table',
+            title: 'Pedidos en mesa',
+            description: 'Filtrar pedidos realizados desde una mesa del restaurante.',
+            category: 'Pedidos por tipo',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                order_type: 'Mesa',
+            },
+            icon: 'tables',
+            keywords: ['pedido en mesa', 'mesa', 'mesas', 'atención mesa'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-takeaway',
+            title: 'Pedidos para llevar',
+            description: 'Filtrar pedidos solicitados para llevar.',
+            category: 'Pedidos por tipo',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                order_type: 'Para llevar',
+            },
+            icon: 'takeaway',
+            keywords: ['para llevar', 'llevar', 'takeaway', 'recoger', 'recogida'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-counter',
+            title: 'Ventas de mostrador',
+            description: 'Filtrar ventas o pedidos hechos sin mesa ni cliente registrado.',
+            category: 'Pedidos por tipo',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                order_type: 'Mostrador',
+            },
+            icon: 'counter',
+            keywords: ['mostrador', 'venta mostrador', 'sin mesa', 'sin cliente'],
+        }),
+
+        makeAction({
+            key: 'admin-orders-today',
+            title: 'Pedidos de hoy',
+            description: 'Ver pedidos y ventas registrados en la fecha actual.',
+            category: 'Pedidos',
+            roles: ['Master', 'Administrador', 'Mesero'],
+            routeName: 'admin.orders.index',
+            query: {
+                date: today.value,
+            },
+            icon: 'money',
+            keywords: ['hoy', 'ventas hoy', 'pedidos hoy', 'recaudación', 'recaudacion del dia'],
+        }),
+
+        makeAction({
+            key: 'client-orders-index',
+            title: 'Mis pedidos',
+            description: 'Ver historial, estado y detalle de mis pedidos realizados.',
+            category: 'Pedidos cliente',
+            roles: ['Cliente'],
+            routeName: 'client.orders.index',
+            icon: 'orders',
+            keywords: ['mis pedidos', 'mi pedido', 'historial pedidos', 'compras', 'mis compras'],
+        }),
+
+        makeAction({
+            key: 'client-orders-create',
+            title: 'Realizar pedido',
+            description: 'Seleccionar categoría, subcategoría, productos, mesa o para llevar.',
+            category: 'Pedidos cliente',
+            roles: ['Cliente'],
+            routeName: 'client.orders.index',
+            query: {
+                action: 'create',
+            },
+            icon: 'cart',
+            keywords: ['realizar pedido', 'hacer pedido', 'nuevo pedido', 'pedir comida', 'comprar', 'carrito'],
+        }),
     ].filter(Boolean);
 });
 
@@ -577,10 +748,16 @@ const iconPath = (icon) => {
         pdf: 'M7 3h7l5 5v13H7V3zm7 0v5h5M5 9H3v9h2m4-5h1.5a1.5 1.5 0 010 3H9v2m5-5v5m0-5h2a2 2 0 010 4h-2',
         txt: 'M6 3h8l4 4v14H6V3zm8 0v4h4M9 12h6M9 16h6M9 8h2',
         clock: 'M12 8v5l3 2m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-
         tables: 'M3 10h18M5 10l1.5 10M18.5 20L20 10M8 10V6a4 4 0 018 0v4M7 20h10',
         calendar: 'M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z',
         reservation: 'M9 12l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z',
+        orders: 'M7 3h10a2 2 0 012 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 012-2zm2 5h6M9 12h6M9 16h4',
+        cart: 'M3 4h2l2.2 10.5a2 2 0 002 1.5h6.8a2 2 0 001.9-1.4L21 8H7M10 20a1 1 0 100-2 1 1 0 000 2zm7 0a1 1 0 100-2 1 1 0 000 2z',
+        chef: 'M7 11h10l-1 9H8l-1-9zM8 8a3 3 0 116 0 3 3 0 113 3H5a3 3 0 113-3z',
+        ready: 'M9 12l2 2 4-4M4 6h16M4 18h16M6 6v12m12-12v12',
+        takeaway: 'M6 8h12l-1 12H7L6 8zm3 0V6a3 3 0 016 0v2M9 12h6',
+        counter: 'M4 10h16v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8zm2-4h12v4H6V6zm3 8h6',
+        money: 'M12 8c-2.5 0-4 .9-4 2.2 0 1.5 1.5 2 4 2.3 2.5.3 4 .8 4 2.3 0 1.3-1.5 2.2-4 2.2m0-9V6m0 12v-2M4 6h16v12H4V6z',
     };
 
     return icons[icon] ?? icons.search;
@@ -620,28 +797,57 @@ onBeforeUnmount(() => {
 <template>
     <div ref="root" class="relative w-full max-w-[420px]">
         <div
-            class="flex items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3 shadow-sm transition focus-within:border-[var(--app-primary)] focus-within:ring-4 focus-within:ring-[var(--app-primary)]/10">
-            <svg class="h-5 w-5 shrink-0 text-[var(--app-primary)]" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                    d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            class="flex items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-card)] px-4 py-3 shadow-sm transition focus-within:border-[var(--app-primary)] focus-within:ring-4 focus-within:ring-[var(--app-primary)]/10"
+        >
+            <svg
+                class="h-5 w-5 shrink-0 text-[var(--app-primary)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
+                />
             </svg>
 
-            <input v-model="search" type="text"
+            <input
+                v-model="search"
+                type="text"
                 class="w-full border-0 bg-transparent p-0 text-sm font-semibold text-[var(--app-text)] placeholder:text-[var(--app-muted)] focus:border-0 focus:ring-0"
-                placeholder="Buscar acciones, módulos, usuarios..." @focus="openSearch" @keydown.esc="close" />
+                placeholder="Buscar acciones, módulos, usuarios..."
+                @focus="openSearch"
+                @keydown.esc="close"
+            />
 
-            <button v-if="search" type="button"
+            <button
+                v-if="search"
+                type="button"
                 class="rounded-lg p-1 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
-                @click="clearSearch">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                @click="clearSearch"
+            >
+                <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
                 </svg>
             </button>
         </div>
 
-        <div v-if="open"
-            class="absolute left-0 top-[calc(100%+0.5rem)] z-50 max-h-[440px] w-[min(92vw,420px)] overflow-y-auto rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-2xl">
+        <div
+            v-if="open"
+            class="absolute left-0 top-[calc(100%+0.5rem)] z-50 max-h-[440px] w-[min(92vw,420px)] overflow-y-auto rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] shadow-2xl"
+        >
             <div class="sticky top-0 z-10 border-b border-[var(--app-border)] bg-[var(--app-card)] px-5 py-4">
                 <p class="text-xs font-black uppercase tracking-[0.22em] text-[var(--app-primary)]">
                     Búsqueda rápida
@@ -653,19 +859,37 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="visibleActions.length" class="py-3">
-                <div v-for="(actions, category) in groupedActions" :key="category" class="py-2">
+                <div
+                    v-for="(actions, category) in groupedActions"
+                    :key="category"
+                    class="py-2"
+                >
                     <p class="px-5 pb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--app-muted)]">
                         {{ category }}
                     </p>
 
-                    <Link v-for="action in actions" :key="action.key" :href="action.href"
+                    <Link
+                        v-for="action in actions"
+                        :key="action.key"
+                        :href="action.href"
                         class="group flex items-center gap-3 px-5 py-3 transition hover:bg-[var(--app-primary-soft)]"
-                        @click="close">
+                        @click="close"
+                    >
                         <div
-                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-surface-soft)] text-[var(--app-primary)] transition group-hover:scale-105 group-hover:bg-[var(--app-card)]">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                                    :d="iconPath(action.icon)" />
+                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-surface-soft)] text-[var(--app-primary)] transition group-hover:scale-105 group-hover:bg-[var(--app-card)]"
+                        >
+                            <svg
+                                class="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="1.8"
+                                    :d="iconPath(action.icon)"
+                                />
                             </svg>
                         </div>
 
@@ -679,9 +903,18 @@ onBeforeUnmount(() => {
                             </p>
                         </div>
 
-                        <svg class="h-5 w-5 shrink-0 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        <svg
+                            class="h-5 w-5 shrink-0 text-[var(--app-muted)] transition group-hover:translate-x-1 group-hover:text-[var(--app-primary)]"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5l7 7-7 7"
+                            />
                         </svg>
                     </Link>
                 </div>
@@ -693,7 +926,7 @@ onBeforeUnmount(() => {
                 </p>
 
                 <p class="mt-1 text-xs font-semibold text-[var(--app-muted)]">
-                    Intenta buscar productos, categorías, usuarios, bitácora o exportar.
+                    Intenta buscar productos, categorías, usuarios, bitácora, reservas o pedidos.
                 </p>
             </div>
         </div>
