@@ -8,6 +8,24 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+/*
+|--------------------------------------------------------------------------
+| Ziggy en localhost y servidor Tecnoweb
+|--------------------------------------------------------------------------
+|
+| Localhost:
+| http://127.0.0.1:8000
+| http://localhost:8000
+|
+| Servidor:
+| https://www.tecnoweb.org.bo/inf513/grupo17sc/proyecto2
+|
+| Importante:
+| Para evitar duplicación de rutas, dejamos `url` solo con el dominio
+| y agregamos la subcarpeta al `uri` de cada ruta.
+|
+*/
+
 const productionBasePath = '/inf513/grupo17sc/proyecto2';
 
 const isLocalhost = [
@@ -16,13 +34,36 @@ const isLocalhost = [
 ].includes(window.location.hostname);
 
 const basePath = isLocalhost ? '' : productionBasePath;
+const cleanBasePath = basePath.replace(/^\/|\/$/g, '');
 
 const globalZiggy = window.Ziggy || {};
+const originalRoutes = globalZiggy.routes || {};
+
+const prefixedRoutes = Object.entries(originalRoutes).reduce((routes, [name, route]) => {
+    let uri = String(route.uri || '').replace(/^\/+/, '');
+
+    if (!isLocalhost && cleanBasePath) {
+        const alreadyPrefixed =
+            uri === cleanBasePath ||
+            uri.startsWith(`${cleanBasePath}/`);
+
+        if (!alreadyPrefixed) {
+            uri = `${cleanBasePath}/${uri}`;
+        }
+    }
+
+    routes[name] = {
+        ...route,
+        uri,
+    };
+
+    return routes;
+}, {});
 
 const ziggyConfig = {
     ...globalZiggy,
-    routes: globalZiggy.routes || {},
-    url: `${window.location.origin}${basePath}`,
+    url: window.location.origin,
+    routes: prefixedRoutes,
     location: new URL(window.location.href),
 };
 
