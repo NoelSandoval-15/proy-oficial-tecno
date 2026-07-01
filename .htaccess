@@ -1,12 +1,12 @@
-DirectoryIndex index.php
-
 <IfModule mod_rewrite.c>
-    RewriteEngine On
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
 
-    RewriteRule ^inf513/grupo17sc/proyecto2/?(.*)$ /inf513/grupo17sc/proyecto2/$1 [R=302,L]
+    RewriteEngine On
 
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
-
     RewriteRule ^ index.php [L]
 </IfModule>
+
