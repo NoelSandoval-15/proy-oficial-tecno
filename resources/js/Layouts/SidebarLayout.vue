@@ -10,6 +10,7 @@ import SidebarOrdersMenu from '@/Components/SidebarOrdersMenu.vue';
 import RouteLoadingIndicator from '@/Components/RouteLoadingIndicator.vue';
 import QuickCommandSearch from '@/Components/QuickCommandSearch.vue';
 import SidebarInsumosMenu from '@/Components/SidebarInsumosMenu.vue';
+import SidebarTicketsMenu from '@/Components/SidebarTicketsMenu.vue';
 
 defineProps({
     title: {
@@ -112,6 +113,12 @@ const canSeeReservations = computed(() => {
     });
 });
 
+const canSeeTickets = computed(() => {
+    return userRoles.value.some((role) => {
+        return ['Master', 'Administrador', 'Mesero', 'Cliente'].includes(role);
+    });
+});
+
 const canSeeOrders = computed(() => {
     return userRoles.value.some((role) => {
         return ['Master', 'Administrador', 'Mesero', 'Cliente'].includes(role);
@@ -191,6 +198,8 @@ const closeUserMenu = () => {
                 <SidebarReservationsMenu v-if="canSeeReservations" />
 
                 <SidebarOrdersMenu v-if="canSeeOrders" />
+
+                <SidebarTicketsMenu v-if="canSeeTickets" />
             </nav>
         </aside>
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\Sales_Detail;
 use App\Models\Sales_Note;
+use App\Services\Tickets\TicketStatusService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -39,13 +40,23 @@ class OrderService
                     ->decrement('amount', $item['amount']);
             }
 
-            return $order->load(['details.product', 'users_admin', 'users_client', 'tables']);
+            $this->registerTicketHistoryIfNeeded($order, $order->status);
+
+            return $order->load([
+                'details.product',
+                'users_admin',
+                'users_client',
+                'tables',
+                'statusHistories.user',
+            ]);
         });
     }
 
     public function updateOrder(Sales_Note $order, array $data): Sales_Note
     {
         return DB::transaction(function () use ($order, $data) {
+            $oldStatus = $order->status;
+
             $this->restoreStock($order);
 
             $order->details()->delete();
@@ -74,7 +85,17 @@ class OrderService
                     ->decrement('amount', $item['amount']);
             }
 
-            return $order->load(['details.product', 'users_admin', 'users_client', 'tables']);
+            if ($oldStatus !== $order->status) {
+                $this->registerTicketHistoryIfNeeded($order->fresh(), $order->status);
+            }
+
+            return $order->load([
+                'details.product',
+                'users_admin',
+                'users_client',
+                'tables',
+                'statusHistories.user',
+            ]);
         });
     }
 
@@ -90,6 +111,8 @@ class OrderService
             $order->update([
                 'status' => Sales_Note::STATUS_CANCELLED,
             ]);
+
+            $this->registerTicketHistoryIfNeeded($order->fresh(), Sales_Note::STATUS_CANCELLED);
         });
     }
 
@@ -105,7 +128,9 @@ class OrderService
                 continue;
             }
 
-            $product = Product::query()->lockForUpdate()->find($productId);
+            $product = Product::query()
+                ->lockForUpdate()
+                ->find($productId);
 
             if (!$product) {
                 throw ValidationException::withMessages([
@@ -143,5 +168,26 @@ class OrderService
             Product::where('id', $detail->products_id)
                 ->increment('amount', $detail->amount);
         }
+    }
+
+    private function registerTicketHistoryIfNeeded(Sales_Note $order, string $status): void
+    {
+        if (!in_array($status, Sales_Note::ticketStatuses(), true)) {
+            return;
+        }
+
+        $lastHistory = $order->statusHistories()
+            ->latest()
+            ->first();
+
+        if ($lastHistory && $lastHistory->status === $status) {
+            return;
+        }
+
+        app(TicketStatusService::class)->register(
+            $order,
+            $status,
+            auth()->user()
+        );
     }
 }

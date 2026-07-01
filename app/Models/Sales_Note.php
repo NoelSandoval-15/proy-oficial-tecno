@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Table;
 use App\Models\Reservation;
 use App\Models\Sales_Detail;
+use App\Models\SalesNoteStatusHistory;
 
 class Sales_Note extends Model
 {
@@ -52,12 +53,60 @@ class Sales_Note extends Model
         ];
     }
 
+    public static function ticketStatuses(): array
+    {
+        return [
+            self::STATUS_PENDING,
+            self::STATUS_PREPARING,
+            self::STATUS_READY,
+            self::STATUS_DELIVERED,
+            self::STATUS_CANCELLED,
+        ];
+    }
+
     public static function orderTypes(): array
     {
         return [
             self::TYPE_TABLE,
             self::TYPE_TAKEAWAY,
             self::TYPE_COUNTER,
+        ];
+    }
+
+    public static function ticketStatusSteps(): array
+    {
+        return [
+            self::STATUS_PENDING => [
+                'title' => 'Pedido recibido',
+                'description' => 'Tu pedido fue enviado correctamente y está pendiente de atención.',
+            ],
+            self::STATUS_PREPARING => [
+                'title' => 'Pedido en preparación',
+                'description' => 'El personal comenzó a preparar tu pedido.',
+            ],
+            self::STATUS_READY => [
+                'title' => 'Pedido listo',
+                'description' => 'Tu pedido ya está listo para ser entregado.',
+            ],
+            self::STATUS_DELIVERED => [
+                'title' => 'Pedido entregado',
+                'description' => 'El pedido fue entregado correctamente.',
+            ],
+            self::STATUS_CANCELLED => [
+                'title' => 'Pedido cancelado',
+                'description' => 'El pedido fue cancelado.',
+            ],
+        ];
+    }
+
+    public static function ticketStatusRank(): array
+    {
+        return [
+            self::STATUS_PENDING => 1,
+            self::STATUS_PREPARING => 2,
+            self::STATUS_READY => 3,
+            self::STATUS_DELIVERED => 4,
+            self::STATUS_CANCELLED => 99,
         ];
     }
 
@@ -89,5 +138,11 @@ class Sales_Note extends Model
     public function sales_notes()
     {
         return $this->hasMany(Sales_Detail::class, 'sales_notes_id');
+    }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(SalesNoteStatusHistory::class, 'sales_notes_id')
+            ->oldest();
     }
 }

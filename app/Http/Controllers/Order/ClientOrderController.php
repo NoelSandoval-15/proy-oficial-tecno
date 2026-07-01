@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Services\Tickets\TicketStatusService;
+
 
 class ClientOrderController extends Controller
 {
@@ -99,7 +101,11 @@ class ClientOrderController extends Controller
         $data['users_client_id'] = auth()->id();
         $data['reservations_id'] = null;
 
-        $orderService->createOrder($data);
+        $order = $orderService->createOrder($data);
+
+        if ($order instanceof Sales_Note) {
+            app(TicketStatusService::class)->registerInitialStatus($order, auth()->user());
+        }
 
         return redirect()
             ->route('client.orders.index')

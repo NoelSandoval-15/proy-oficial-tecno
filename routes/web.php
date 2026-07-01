@@ -18,7 +18,8 @@ use App\Http\Controllers\Order\ClientOrderController;
 use App\Http\Controllers\Insumos\SupplierController;
 use App\Http\Controllers\Insumos\PurchaseNoteController;
 use App\Http\Controllers\Insumos\InsumoNoteController;
-
+use App\Http\Controllers\Tickets\ClientTicketController;
+use App\Http\Controllers\Tickets\TicketBoardController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -273,6 +274,23 @@ Route::middleware(['auth', 'role:Master|Administrador'])
 
         Route::get('/notas/exportar/txt', [InsumoNoteController::class, 'exportTxt'])
             ->name('notes.export.txt');
+    });
+
+Route::middleware(['auth', 'role:Cliente'])
+    ->prefix('cliente/tickets')
+    ->name('client.tickets.')
+    ->group(function () {
+        Route::get('/', [ClientTicketController::class, 'index'])->name('index');
+        Route::get('/{ticket}', [ClientTicketController::class, 'show'])->name('show');
+    });
+
+Route::middleware(['auth', 'role:Master|Administrador|Mesero'])
+    ->prefix('tickets')
+    ->name('tickets.')
+    ->group(function () {
+        Route::get('/', [TicketBoardController::class, 'index'])->name('index');
+        Route::get('/{ticket}', [TicketBoardController::class, 'show'])->name('show');
+        Route::patch('/{ticket}/estado', [TicketBoardController::class, 'changeStatus'])->name('change-status');
     });
 
 require __DIR__ . '/auth.php';
