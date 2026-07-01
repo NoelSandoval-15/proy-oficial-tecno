@@ -3,6 +3,8 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    RewriteRule ^inf513/grupo17sc/proyecto2/?(.*)$ /inf513/grupo17sc/proyecto2/$1 [R=302,L]
+
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
 
