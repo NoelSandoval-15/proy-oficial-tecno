@@ -9,6 +9,7 @@ import SidebarReservationsMenu from '@/Components/SidebarReservationsMenu.vue';
 import SidebarOrdersMenu from '@/Components/SidebarOrdersMenu.vue';
 import RouteLoadingIndicator from '@/Components/RouteLoadingIndicator.vue';
 import QuickCommandSearch from '@/Components/QuickCommandSearch.vue';
+import SidebarInsumosMenu from '@/Components/SidebarInsumosMenu.vue';
 
 defineProps({
     title: {
@@ -95,7 +96,13 @@ const canSeeAdministration = computed(() => {
 
 const canSeeProducts = computed(() => {
     return userRoles.value.some((role) => {
-        return ['Master', 'Administrador', 'Mesero'].includes(role);
+        return ['Master', 'Administrador'].includes(role);
+    });
+});
+
+const canSeeInsumos = computed(() => {
+    return userRoles.value.some((role) => {
+        return ['Master', 'Administrador'].includes(role);
     });
 });
 
@@ -178,6 +185,8 @@ const closeUserMenu = () => {
                 <SidebarAdministrationMenu v-if="canSeeAdministration" />
 
                 <SidebarProductsMenu v-if="canSeeProducts" />
+
+                <SidebarInsumosMenu v-if="canSeeInsumos" />
 
                 <SidebarReservationsMenu v-if="canSeeReservations" />
 

@@ -15,6 +15,8 @@ use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\ClientReservationController;
 use App\Http\Controllers\Order\AdminOrderController;
 use App\Http\Controllers\Order\ClientOrderController;
+use App\Http\Controllers\Insumos\SupplierController;
+use App\Http\Controllers\Insumos\PurchaseNoteController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -92,7 +94,7 @@ Route::middleware(['auth', 'verified'])->prefix('administracion')->name('adminis
 Route::middleware([
     'auth',
     'verified',
-    'role:Master|Administrador|Mesero',
+    'role:Master|Administrador',
 ])
     ->prefix('productos')
     ->name('products.')
@@ -202,5 +204,55 @@ Route::middleware(['role:Cliente'])->group(function () {
     Route::patch('/cliente/pedidos/{order}/cancelar', [ClientOrderController::class, 'cancel'])
         ->name('client.orders.cancel');
 });
+
+Route::middleware(['auth', 'role:Master|Administrador'])
+    ->prefix('insumos')
+    ->name('insumos.')
+    ->group(function () {
+        Route::get('/proveedores', [SupplierController::class, 'index'])
+            ->name('suppliers.index');
+
+        Route::post('/proveedores', [SupplierController::class, 'store'])
+            ->name('suppliers.store');
+
+        Route::put('/proveedores/{supplier}', [SupplierController::class, 'update'])
+            ->name('suppliers.update');
+
+        Route::delete('/proveedores/{supplier}', [SupplierController::class, 'destroy'])
+            ->name('suppliers.destroy');
+
+        Route::get('/proveedores/exportar/excel', [SupplierController::class, 'exportExcel'])
+            ->name('suppliers.export.excel');
+
+        Route::get('/proveedores/exportar/pdf', [SupplierController::class, 'exportPdf'])
+            ->name('suppliers.export.pdf');
+
+        Route::get('/proveedores/exportar/txt', [SupplierController::class, 'exportTxt'])
+            ->name('suppliers.export.txt');
+
+        Route::get('/compras', [PurchaseNoteController::class, 'index'])
+            ->name('purchases.index');
+
+        Route::get('/compras/crear', [PurchaseNoteController::class, 'create'])
+            ->name('purchases.create');
+
+        Route::post('/compras', [PurchaseNoteController::class, 'store'])
+            ->name('purchases.store');
+
+        Route::get('/compras/exportar/excel', [PurchaseNoteController::class, 'exportExcel'])
+            ->name('purchases.export.excel');
+
+        Route::get('/compras/exportar/pdf', [PurchaseNoteController::class, 'exportPdf'])
+            ->name('purchases.export.pdf');
+
+        Route::get('/compras/exportar/txt', [PurchaseNoteController::class, 'exportTxt'])
+            ->name('purchases.export.txt');
+
+        Route::get('/compras/{purchaseNote}', [PurchaseNoteController::class, 'show'])
+            ->name('purchases.show');
+
+        Route::delete('/compras/{purchaseNote}', [PurchaseNoteController::class, 'destroy'])
+            ->name('purchases.destroy');
+    });
 
 require __DIR__ . '/auth.php';

@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Table;
-use App\Models\Reservation;
 
 class Details_Insumos extends Model
 {
