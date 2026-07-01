@@ -1,0 +1,20 @@
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /inf513/grupo17sc/proyecto2/
+
+    RewriteRule ^(\.env|\.git|artisan|composer\.(json|lock)|package(-lock)?\.json|vite\.config\.js|tailwind\.config\.js|postcss\.config\.js|phpunit\.xml)$ - [F,L]
+
+    RewriteRule ^(app|bootstrap|config|database|node_modules|resources|routes|tests|vendor)(/|$) - [F,L]
+
+    RewriteRule ^storage/(.*)$ storage/app/public/$1 [L]
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+
+    RewriteRule . index.php [L]
+</IfModule>
