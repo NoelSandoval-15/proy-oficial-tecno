@@ -1,4 +1,3 @@
-cat > ~/proyecto2/.htaccess <<'EOF'
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -16,4 +15,3 @@ cat > ~/proyecto2/.htaccess <<'EOF'
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-EOF
