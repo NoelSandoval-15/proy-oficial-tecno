@@ -111,4 +111,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(Sales_Note::class, 'users_client_id');
     }
+
+    public function generatedPayments()
+    {
+        return $this->hasMany(Payment::class, 'generated_by');
+    }
+
+    public function clientPayments()
+    {
+        return $this->hasManyThrough(
+            Payment::class,
+            Sales_Note::class,
+            'users_client_id',
+            'sales_note_id',
+            'id',
+            'id'
+        );
+    }
 }

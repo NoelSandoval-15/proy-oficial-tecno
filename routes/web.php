@@ -21,6 +21,8 @@ use App\Http\Controllers\Insumos\InsumoNoteController;
 use App\Http\Controllers\Tickets\ClientTicketController;
 use App\Http\Controllers\Tickets\TicketBoardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Payments\ClientPaymentController;
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
@@ -295,4 +297,34 @@ Route::middleware(['auth', 'role:Master|Administrador|Mesero'])
         Route::patch('/{ticket}/estado', [TicketBoardController::class, 'changeStatus'])->name('change-status');
     });
 
+Route::middleware(['auth', 'verified', 'role:Master|Administrador|Mesero'])
+    ->prefix('pagos')
+    ->name('payments.')
+    ->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])
+            ->name('index');
+
+        Route::post('/ventas/{salesNote}/generar-qr', [PaymentController::class, 'generateQr'])
+            ->name('generate-qr');
+
+        Route::post('/{payment}/consultar', [PaymentController::class, 'checkStatus'])
+            ->name('check-status');
+
+        Route::post('/ventas/{salesNote}/manual', [PaymentController::class, 'registerManualPayment'])
+            ->name('manual');
+    });
+
+Route::middleware(['auth', 'verified', 'role:Cliente'])
+    ->prefix('cliente/pagos')
+    ->name('client.payments.')
+    ->group(function () {
+        Route::get('/', [ClientPaymentController::class, 'index'])
+            ->name('index');
+
+        Route::post('/ventas/{salesNote}/generar-qr', [ClientPaymentController::class, 'generateQr'])
+            ->name('generate-qr');
+
+        Route::post('/{payment}/consultar', [ClientPaymentController::class, 'checkStatus'])
+            ->name('check-status');
+    });
 require __DIR__ . '/auth.php';

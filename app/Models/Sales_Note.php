@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\Table;
-use App\Models\Reservation;
-use App\Models\Sales_Detail;
-use App\Models\SalesNoteStatusHistory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Sales_Note extends Model
 {
@@ -28,6 +27,12 @@ class Sales_Note extends Model
     protected $casts = [
         'date' => 'date',
         'total_price' => 'float',
+    ];
+
+    protected $appends = [
+        'status_label',
+        'order_type_label',
+        'can_generate_payment',
     ];
 
     public const STATUS_PENDING = 'Pendiente';
@@ -64,6 +69,13 @@ class Sales_Note extends Model
         ];
     }
 
+    public static function payableStatuses(): array
+    {
+        return [
+            self::STATUS_DELIVERED,
+        ];
+    }
+
     public static function orderTypes(): array
     {
         return [
@@ -92,6 +104,10 @@ class Sales_Note extends Model
                 'title' => 'Pedido entregado',
                 'description' => 'El pedido fue entregado correctamente.',
             ],
+            self::STATUS_PAID => [
+                'title' => 'Pedido pagado',
+                'description' => 'El pago fue confirmado correctamente.',
+            ],
             self::STATUS_CANCELLED => [
                 'title' => 'Pedido cancelado',
                 'description' => 'El pedido fue cancelado.',
@@ -106,43 +122,249 @@ class Sales_Note extends Model
             self::STATUS_PREPARING => 2,
             self::STATUS_READY => 3,
             self::STATUS_DELIVERED => 4,
+            self::STATUS_PAID => 5,
             self::STATUS_CANCELLED => 99,
         ];
     }
 
-    public function users_admin()
+    public function scopeDelivered(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_DELIVERED);
+    }
+
+    public function scopePaid(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PAID);
+    }
+
+    public function scopePayable(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::payableStatuses());
+    }
+
+    public function scopeNotCancelled(Builder $query): Builder
+    {
+        return $query->where('status', '!=', self::STATUS_CANCELLED);
+    }
+
+    public function scopeForClient(Builder $query, int $clientId): Builder
+    {
+        return $query->where('users_client_id', $clientId);
+    }
+
+    public function scopeWithPaymentData(Builder $query): Builder
+    {
+        return $query->with([
+            'users_client.profile',
+            'users_admin.profile',
+            'tables',
+            'reservations',
+            'details.product',
+            'latestPayment',
+        ]);
+    }
+
+    public function users_admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'users_admin_id');
     }
 
-    public function users_client()
+    public function users_client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'users_client_id');
     }
 
-    public function tables()
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'users_admin_id');
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'users_client_id');
+    }
+
+    public function tables(): BelongsTo
     {
         return $this->belongsTo(Table::class, 'tables_id');
     }
 
-    public function reservations()
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(Table::class, 'tables_id');
+    }
+
+    public function reservations(): BelongsTo
     {
         return $this->belongsTo(Reservation::class, 'reservations_id');
     }
 
-    public function details()
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class, 'reservations_id');
+    }
+
+    public function details(): HasMany
     {
         return $this->hasMany(Sales_Detail::class, 'sales_notes_id');
     }
 
-    public function sales_notes()
+    public function sales_details(): HasMany
     {
         return $this->hasMany(Sales_Detail::class, 'sales_notes_id');
     }
 
-    public function statusHistories()
+    public function sales_notes(): HasMany
+    {
+        return $this->hasMany(Sales_Detail::class, 'sales_notes_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'sales_note_id');
+    }
+
+    public function latestPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'sales_note_id')->latestOfMany();
+    }
+
+    public function activePayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'sales_note_id')
+            ->whereIn('status', [
+                Payment::STATUS_PENDING,
+                Payment::STATUS_QR_GENERATED,
+            ])
+            ->latestOfMany();
+    }
+
+    public function paidPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'sales_note_id')
+            ->where('status', Payment::STATUS_PAID)
+            ->latestOfMany();
+    }
+
+    public function statusHistories(): HasMany
     {
         return $this->hasMany(SalesNoteStatusHistory::class, 'sales_notes_id')
             ->oldest();
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isPreparing(): bool
+    {
+        return $this->status === self::STATUS_PREPARING;
+    }
+
+    public function isReady(): bool
+    {
+        return $this->status === self::STATUS_READY;
+    }
+
+    public function isDelivered(): bool
+    {
+        return $this->status === self::STATUS_DELIVERED;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === self::STATUS_PAID;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function canGeneratePayment(): bool
+    {
+        return $this->isDelivered() && !$this->hasPaidPayment();
+    }
+
+    public function hasPaidPayment(): bool
+    {
+        return $this->payments()
+            ->where('status', Payment::STATUS_PAID)
+            ->exists();
+    }
+
+    public function hasActivePaymentQr(): bool
+    {
+        return $this->payments()
+            ->whereIn('status', [
+                Payment::STATUS_PENDING,
+                Payment::STATUS_QR_GENERATED,
+            ])
+            ->exists();
+    }
+
+    public function getTotalItemsAttribute(): int
+    {
+        if ($this->relationLoaded('details')) {
+            return (int) $this->details->sum('amount');
+        }
+
+        return (int) $this->details()->sum('amount');
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->status ?: 'Sin estado';
+    }
+
+    public function getOrderTypeLabelAttribute(): string
+    {
+        return $this->order_type ?: 'No definido';
+    }
+
+    public function getCanGeneratePaymentAttribute(): bool
+    {
+        return $this->canGeneratePayment();
+    }
+
+    public function markAsPaid(?int $userId = null): void
+    {
+        if ($this->isPaid()) {
+            return;
+        }
+
+        $this->forceFill([
+            'status' => self::STATUS_PAID,
+        ])->save();
+
+        if ($userId) {
+            $this->statusHistories()->create([
+                'users_id' => $userId,
+                'status' => self::STATUS_PAID,
+                'title' => 'Pedido pagado',
+                'description' => 'El pago fue confirmado correctamente.',
+            ]);
+        }
+    }
+
+    public function markAsDelivered(?int $userId = null): void
+    {
+        if ($this->isDelivered()) {
+            return;
+        }
+
+        $this->forceFill([
+            'status' => self::STATUS_DELIVERED,
+        ])->save();
+
+        if ($userId) {
+            $this->statusHistories()->create([
+                'users_id' => $userId,
+                'status' => self::STATUS_DELIVERED,
+                'title' => 'Pedido entregado',
+                'description' => 'El pedido fue entregado correctamente.',
+            ]);
+        }
     }
 }

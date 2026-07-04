@@ -65,7 +65,7 @@ class HandleInertiaRequests extends Middleware
             'roles' => $request->user() && method_exists($request->user(), 'getRoleNames')
                 ? $request->user()->getRoleNames()->values()
                 : [],
-                
+
             'visualThemes' => fn() => Theme::query()
                 ->orderBy('id')
                 ->get(['id', 'name'])
@@ -99,6 +99,12 @@ class HandleInertiaRequests extends Middleware
             'routeVisits' => [
                 'current' => Cache::get('route_visits:' . $routeKey, 0),
                 'last' => Cache::get('route_visits_last:' . $routeKey),
+            ],
+            'flash' => [
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                'info' => fn() => $request->session()->get('info'),
+                'warning' => fn() => $request->session()->get('warning'),
             ],
         ];
     }

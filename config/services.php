@@ -20,6 +20,13 @@ return [
         'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
         'scheme' => 'https',
     ],
+ 'pagofacil' => [
+    'base_url' => 'https://masterqr.pagofacil.com.bo/api/services/v2',
+    'token_secret' => env('PAGOFACIL_TOKEN_SECRET'),
+    'token_service' => env('PAGOFACIL_TOKEN_SERVICE'),
+    'commerce_id' => env('PAGOFACIL_COMMERCE_ID'),
+    'callback_url' => env('PAGOFACIL_CALLBACK_URL'),
+],
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
