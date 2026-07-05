@@ -16,6 +16,16 @@ class Insumo extends Model
         'price',
     ];
 
+    protected $casts = [
+        'amount' => 'float',
+        'price' => 'float',
+    ];
+
+    protected $appends = [
+        'stock_status',
+        'price_label',
+    ];
+
     public function details_insumos()
     {
         return $this->hasMany(Details_Insumos::class, 'insumos_id');
@@ -24,5 +34,23 @@ class Insumo extends Model
     public function details_purchases()
     {
         return $this->hasMany(Details_Purchases::class, 'insumos_id');
+    }
+
+    public function getStockStatusAttribute(): string
+    {
+        if ((float) $this->amount <= 0) {
+            return 'Sin stock';
+        }
+
+        if ((float) $this->amount <= 5) {
+            return 'Stock bajo';
+        }
+
+        return 'Disponible';
+    }
+
+    public function getPriceLabelAttribute(): string
+    {
+        return 'Bs ' . number_format((float) $this->price, 2, ',', '.');
     }
 }

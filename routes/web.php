@@ -23,6 +23,8 @@ use App\Http\Controllers\Tickets\TicketBoardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payments\ClientPaymentController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Insumos\InsumoController;
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
@@ -34,9 +36,9 @@ use App\Http\Controllers\Payments\ClientPaymentController;
 // });
 Route::get('/', HomeController::class)->name('home');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth', 'verified'])
+    ->get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard');
 
 Route::post('/themes/select', [ThemeController::class, 'select'])->middleware(['auth'])->name('themes.select');
 
@@ -98,6 +100,16 @@ Route::middleware(['auth', 'verified'])->prefix('administracion')->name('adminis
     Route::get('/bitacora/data', [AuditLogController::class, 'data'])
         ->name('bitacora.data');
 });
+
+Route::middleware(['auth', 'verified', 'role:Master|Administrador'])
+    ->prefix('insumos')
+    ->name('insumos.')
+    ->group(function () {
+        Route::get('/catalogo', [InsumoController::class, 'index'])->name('items.index');
+        Route::post('/catalogo', [InsumoController::class, 'store'])->name('items.store');
+        Route::put('/catalogo/{insumo}', [InsumoController::class, 'update'])->name('items.update');
+        Route::delete('/catalogo/{insumo}', [InsumoController::class, 'destroy'])->name('items.destroy');
+    });
 Route::middleware([
     'auth',
     'verified',

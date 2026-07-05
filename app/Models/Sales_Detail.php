@@ -17,6 +17,8 @@ class Sales_Detail extends Model
     ];
 
     protected $casts = [
+        'sales_notes_id' => 'integer',
+        'products_id' => 'integer',
         'amount' => 'integer',
         'price_sale' => 'float',
     ];
@@ -26,6 +28,11 @@ class Sales_Detail extends Model
     ];
 
     public function sales_note(): BelongsTo
+    {
+        return $this->belongsTo(Sales_Note::class, 'sales_notes_id');
+    }
+
+    public function salesNote(): BelongsTo
     {
         return $this->belongsTo(Sales_Note::class, 'sales_notes_id');
     }

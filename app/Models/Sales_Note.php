@@ -33,6 +33,7 @@ class Sales_Note extends Model
         'status_label',
         'order_type_label',
         'can_generate_payment',
+        'total_items',
     ];
 
     public const STATUS_PENDING = 'Pendiente';
@@ -65,6 +66,7 @@ class Sales_Note extends Model
             self::STATUS_PREPARING,
             self::STATUS_READY,
             self::STATUS_DELIVERED,
+            self::STATUS_PAID,
             self::STATUS_CANCELLED,
         ];
     }
@@ -161,6 +163,8 @@ class Sales_Note extends Model
             'reservations',
             'details.product',
             'latestPayment',
+            'paidPayment',
+            'activePayment',
         ]);
     }
 
@@ -249,7 +253,7 @@ class Sales_Note extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(SalesNoteStatusHistory::class, 'sales_notes_id')
-            ->oldest();
+            ->oldest('id');
     }
 
     public function isPending(): bool
@@ -284,11 +288,21 @@ class Sales_Note extends Model
 
     public function canGeneratePayment(): bool
     {
-        return $this->isDelivered() && !$this->hasPaidPayment();
+        return $this->isDelivered()
+            && !$this->hasPaidPayment()
+            && !$this->hasActivePaymentQr();
     }
 
     public function hasPaidPayment(): bool
     {
+        if ($this->relationLoaded('paidPayment')) {
+            return $this->paidPayment !== null;
+        }
+
+        if ($this->relationLoaded('payments')) {
+            return $this->payments->contains('status', Payment::STATUS_PAID);
+        }
+
         return $this->payments()
             ->where('status', Payment::STATUS_PAID)
             ->exists();
@@ -296,11 +310,28 @@ class Sales_Note extends Model
 
     public function hasActivePaymentQr(): bool
     {
+        if ($this->relationLoaded('payments')) {
+            return $this->payments->contains(function (Payment $payment) {
+                return $payment->status === Payment::STATUS_QR_GENERATED
+                    && filled($payment->qr_base64)
+                    && !$payment->isExpired();
+            });
+        }
+
+        if ($this->relationLoaded('activePayment')) {
+            return $this->activePayment !== null
+                && $this->activePayment->status === Payment::STATUS_QR_GENERATED
+                && filled($this->activePayment->qr_base64)
+                && !$this->activePayment->isExpired();
+        }
+
         return $this->payments()
-            ->whereIn('status', [
-                Payment::STATUS_PENDING,
-                Payment::STATUS_QR_GENERATED,
-            ])
+            ->where('status', Payment::STATUS_QR_GENERATED)
+            ->whereNotNull('qr_base64')
+            ->where(function ($query) {
+                $query->whereNull('expiration_date')
+                    ->orWhere('expiration_date', '>=', now());
+            })
             ->exists();
     }
 
@@ -338,19 +369,17 @@ class Sales_Note extends Model
             'status' => self::STATUS_PAID,
         ])->save();
 
-        if ($userId) {
-            $this->statusHistories()->create([
-                'users_id' => $userId,
-                'status' => self::STATUS_PAID,
-                'title' => 'Pedido pagado',
-                'description' => 'El pago fue confirmado correctamente.',
-            ]);
-        }
+        $this->recordStatusHistory(
+            userId: $userId,
+            status: self::STATUS_PAID,
+            title: 'Pedido pagado',
+            description: 'El pago fue confirmado correctamente.'
+        );
     }
 
     public function markAsDelivered(?int $userId = null): void
     {
-        if ($this->isDelivered()) {
+        if ($this->isPaid() || $this->isCancelled() || $this->isDelivered()) {
             return;
         }
 
@@ -358,13 +387,37 @@ class Sales_Note extends Model
             'status' => self::STATUS_DELIVERED,
         ])->save();
 
-        if ($userId) {
-            $this->statusHistories()->create([
-                'users_id' => $userId,
-                'status' => self::STATUS_DELIVERED,
-                'title' => 'Pedido entregado',
-                'description' => 'El pedido fue entregado correctamente.',
-            ]);
+        $this->recordStatusHistory(
+            userId: $userId,
+            status: self::STATUS_DELIVERED,
+            title: 'Pedido entregado',
+            description: 'El pedido fue entregado correctamente.'
+        );
+    }
+
+    private function recordStatusHistory(
+        ?int $userId,
+        string $status,
+        string $title,
+        string $description
+    ): void {
+        if (!$userId) {
+            return;
         }
+
+        $alreadyExists = $this->statusHistories()
+            ->where('status', $status)
+            ->exists();
+
+        if ($alreadyExists) {
+            return;
+        }
+
+        $this->statusHistories()->create([
+            'users_id' => $userId,
+            'status' => $status,
+            'title' => $title,
+            'description' => $description,
+        ]);
     }
 }

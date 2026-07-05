@@ -8,6 +8,13 @@ const open = ref(true);
 
 const insumosLinks = computed(() => [
     {
+        label: 'Catálogo de insumos',
+        routeName: 'insumos.items.index',
+        path: '/insumos/catalogo',
+        exact: false,
+        icon: 'M4 6h16M4 12h16M4 18h16M8 6v12M16 6v12',
+    },
+    {
         label: 'Proveedores',
         routeName: 'insumos.suppliers.index',
         path: '/insumos/proveedores',
@@ -61,33 +68,73 @@ watch(open, (value) => {
 
 <template>
     <div class="mt-3">
-        <button type="button"
-            class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition" :class="sectionActive
+        <button
+            type="button"
+            class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition"
+            :class="sectionActive
                 ? 'bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
                 : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
-            @click="open = !open">
+            @click="open = !open"
+        >
             <span class="flex items-center gap-3">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <svg
+                    class="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
                 </svg>
 
                 Insumos
             </span>
 
-            <svg class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            <svg
+                class="h-4 w-4 transition"
+                :class="open ? 'rotate-180' : ''"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                />
             </svg>
         </button>
 
-        <div v-if="open" class="mt-2 space-y-1 pl-2">
-            <Link v-for="item in insumosLinks" :key="item.path" :href="route(item.routeName)"
-                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold transition" :class="isActive(item)
+        <div
+            v-if="open"
+            class="mt-2 space-y-1 pl-2"
+        >
+            <Link
+                v-for="item in insumosLinks"
+                :key="item.path"
+                :href="route(item.routeName)"
+                class="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold transition"
+                :class="isActive(item)
                     ? 'bg-[var(--app-primary-soft)] text-[var(--app-primary-text)]'
-                    : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'">
-                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" :d="item.icon" />
+                    : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]'"
+            >
+                <svg
+                    class="h-5 w-5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        :d="item.icon"
+                    />
                 </svg>
 
                 <span class="truncate">

@@ -15,6 +15,8 @@ class ClientPaymentController extends Controller
 {
     public function index()
     {
+        $clientId = auth()->id();
+
         $sales = Sales_Note::query()
             ->with([
                 'details.product',
@@ -22,7 +24,7 @@ class ClientPaymentController extends Controller
                 'paidPayment',
                 'activePayment',
             ])
-            ->forClient(auth()->id())
+            ->forClient($clientId)
             ->where(function ($query) {
                 $query->whereIn('status', [
                     Sales_Note::STATUS_DELIVERED,
@@ -37,17 +39,17 @@ class ClientPaymentController extends Controller
             'sales' => $sales,
             'summary' => [
                 'pending_count' => Sales_Note::query()
-                    ->forClient(auth()->id())
+                    ->forClient($clientId)
                     ->where('status', Sales_Note::STATUS_DELIVERED)
                     ->count(),
 
                 'paid_count' => Sales_Note::query()
-                    ->forClient(auth()->id())
+                    ->forClient($clientId)
                     ->where('status', Sales_Note::STATUS_PAID)
                     ->count(),
 
                 'pending_total' => (float) Sales_Note::query()
-                    ->forClient(auth()->id())
+                    ->forClient($clientId)
                     ->where('status', Sales_Note::STATUS_DELIVERED)
                     ->sum('total_price'),
             ],
@@ -103,6 +105,8 @@ class ClientPaymentController extends Controller
 
     public function checkStatus(Payment $payment, PagoFacilService $pagoFacilService)
     {
+        $silent = request()->boolean('silent');
+
         $payment->loadMissing('salesNote');
 
         if (!$payment->salesNote || (int) $payment->salesNote->users_client_id !== (int) auth()->id()) {
@@ -110,7 +114,9 @@ class ClientPaymentController extends Controller
         }
 
         if ($payment->isPaid()) {
-            return back()->with('info', 'Este pago ya fue confirmado.');
+            return $silent
+                ? back()
+                : back()->with('info', 'Este pago ya fue confirmado.');
         }
 
         try {
@@ -122,8 +128,14 @@ class ClientPaymentController extends Controller
 
             $paymentStatus = data_get($response, 'values.paymentStatus');
 
-            if ($pagoFacilService->isPaidStatus($paymentStatus)) {
+            if ($this->paymentResponseSaysPaid($response, $pagoFacilService)) {
                 DB::transaction(function () use ($payment, $response) {
+                    $payment->refresh();
+
+                    if ($payment->isPaid()) {
+                        return;
+                    }
+
                     $amount = (float) data_get(
                         $response,
                         'values.amount',
@@ -133,7 +145,9 @@ class ClientPaymentController extends Controller
                     $payment->markAsPaid($amount);
                 });
 
-                return back()->with('success', 'Pago confirmado correctamente.');
+                return $silent
+                    ? back()
+                    : back()->with('success', 'Pago confirmado correctamente.');
             }
 
             if ($pagoFacilService->isRevertedStatus($paymentStatus)) {
@@ -142,7 +156,9 @@ class ClientPaymentController extends Controller
                     'error_message' => 'La transacción fue revertida por PagoFácil.',
                 ])->save();
 
-                return back()->with('error', 'La transacción fue revertida.');
+                return $silent
+                    ? back()
+                    : back()->with('error', 'La transacción fue revertida.');
             }
 
             if ($pagoFacilService->isCancelledStatus($paymentStatus)) {
@@ -151,16 +167,22 @@ class ClientPaymentController extends Controller
                     'error_message' => 'La transacción fue anulada por PagoFácil.',
                 ])->save();
 
-                return back()->with('error', 'La transacción fue anulada.');
+                return $silent
+                    ? back()
+                    : back()->with('error', 'La transacción fue anulada.');
             }
 
             if ($payment->isExpired()) {
                 $payment->markAsExpired();
 
-                return back()->with('error', 'El QR expiró. Genera uno nuevo.');
+                return $silent
+                    ? back()
+                    : back()->with('error', 'El QR expiró. Genera uno nuevo.');
             }
 
-            return back()->with('info', 'Tu pago todavía no fue confirmado.');
+            return $silent
+                ? back()
+                : back()->with('info', 'Tu pago todavía no fue confirmado.');
         } catch (Throwable $e) {
             Log::error('Error al consultar pago PagoFácil desde cliente', [
                 'payment_id' => $payment->id,
@@ -168,39 +190,30 @@ class ClientPaymentController extends Controller
                 'message' => $e->getMessage(),
             ]);
 
-            return back()->with('error', $e->getMessage());
+            return $silent
+                ? back()
+                : back()->with('error', $e->getMessage());
         }
     }
 
     private function getOrCreateQrPayment(Sales_Note $salesNote): Payment
     {
-        $payment = Payment::query()
+        $activePayment = Payment::query()
             ->where('sales_note_id', $salesNote->id)
+            ->where('payment_method', Payment::METHOD_QR_PAGOFACIL)
             ->whereIn('status', [
                 Payment::STATUS_PENDING,
                 Payment::STATUS_QR_GENERATED,
-                Payment::STATUS_FAILED,
-                Payment::STATUS_EXPIRED,
             ])
             ->latest('id')
             ->first();
 
-        if ($payment) {
-            if ($payment->status === Payment::STATUS_EXPIRED || $payment->status === Payment::STATUS_FAILED) {
-                $payment->forceFill([
-                    'status' => Payment::STATUS_PENDING,
-                    'qr_base64' => null,
-                    'checkout_url' => null,
-                    'deep_link' => null,
-                    'qr_content_url' => null,
-                    'universal_url' => null,
-                    'expiration_date' => null,
-                    'error_message' => null,
-                    'generated_by' => auth()->id(),
-                ])->save();
-            }
+        if ($activePayment && !$activePayment->isExpired()) {
+            return $activePayment;
+        }
 
-            return $payment;
+        if ($activePayment && $activePayment->isExpired()) {
+            $activePayment->markAsExpired();
         }
 
         return Payment::create([
@@ -212,6 +225,20 @@ class ClientPaymentController extends Controller
             'payment_date' => null,
             'generated_by' => auth()->id(),
         ]);
+    }
+
+    private function paymentResponseSaysPaid(array $response, PagoFacilService $pagoFacilService): bool
+    {
+        $paymentStatus = data_get($response, 'values.paymentStatus');
+
+        if ($pagoFacilService->isPaidStatus($paymentStatus)) {
+            return true;
+        }
+
+        return filled(data_get($response, 'values.paymentDate'))
+            && filled(data_get($response, 'values.paymentTime'))
+            && filled(data_get($response, 'values.payerName'))
+            && filled(data_get($response, 'values.payerDocument'));
     }
 
     private function ensureClientOwnsSale(Sales_Note $salesNote): void

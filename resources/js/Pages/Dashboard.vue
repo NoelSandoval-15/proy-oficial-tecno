@@ -1,6 +1,142 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 import SidebarLayout from '@/Layouts/SidebarLayout.vue';
+
+const props = defineProps({
+    dashboard: {
+        type: Object,
+        default: () => ({}),
+    },
+});
+
+const roleGroup = computed(() => props.dashboard?.role_group || 'client');
+const hero = computed(() => props.dashboard?.hero || {});
+const metrics = computed(() => props.dashboard?.metrics || []);
+const statusBreakdown = computed(() => props.dashboard?.status_breakdown || []);
+const topProducts = computed(() => props.dashboard?.top_products || []);
+const recentSales = computed(() => props.dashboard?.recent_sales || []);
+const quickActions = computed(() => props.dashboard?.quick_actions || []);
+
+const isAdmin = computed(() => roleGroup.value === 'admin');
+const isWaiter = computed(() => roleGroup.value === 'waiter');
+const isClient = computed(() => roleGroup.value === 'client');
+
+const money = (value) => {
+    return new Intl.NumberFormat('es-BO', {
+        style: 'currency',
+        currency: 'BOB',
+        minimumFractionDigits: 2,
+    }).format(Number(value || 0));
+};
+
+const number = (value) => {
+    return new Intl.NumberFormat('es-BO').format(Number(value || 0));
+};
+
+const metricValue = (metric) => {
+    if (metric.type === 'money') {
+        return money(metric.value);
+    }
+
+    return number(metric.value);
+};
+
+const toneClasses = (tone) => {
+    const map = {
+        emerald: {
+            card: 'border-emerald-500/20',
+            icon: 'bg-emerald-500/10 text-emerald-700',
+            badge: 'bg-emerald-500/10 text-emerald-700',
+            bar: 'bg-emerald-500',
+        },
+        amber: {
+            card: 'border-amber-500/20',
+            icon: 'bg-amber-500/10 text-amber-700',
+            badge: 'bg-amber-500/10 text-amber-700',
+            bar: 'bg-amber-500',
+        },
+        blue: {
+            card: 'border-blue-500/20',
+            icon: 'bg-blue-500/10 text-blue-700',
+            badge: 'bg-blue-500/10 text-blue-700',
+            bar: 'bg-blue-500',
+        },
+        primary: {
+            card: 'border-[var(--app-primary)]/20',
+            icon: 'bg-[var(--app-primary)]/10 text-[var(--app-primary)]',
+            badge: 'bg-[var(--app-primary)]/10 text-[var(--app-primary)]',
+            bar: 'bg-[var(--app-primary)]',
+        },
+    };
+
+    return map[tone] || map.primary;
+};
+
+const statusTotal = computed(() => {
+    return statusBreakdown.value.reduce((total, item) => total + Number(item.count || 0), 0);
+});
+
+const statusPercent = (item) => {
+    if (!statusTotal.value) {
+        return 0;
+    }
+
+    return Math.round((Number(item.count || 0) / statusTotal.value) * 100);
+};
+
+const paymentStatusLabel = (status) => {
+    const map = {
+        pending: 'Pendiente',
+        qr_generated: 'QR activo',
+        paid: 'Pagado',
+        failed: 'Fallido',
+        reverted: 'Revertido',
+        cancelled: 'Anulado',
+        expired: 'Expirado',
+    };
+
+    return map[status] || 'Sin pago';
+};
+
+const paymentMethodLabel = (method) => {
+    const map = {
+        cash: 'Efectivo',
+        qr_pagofacil: 'QR PagoFácil',
+    };
+
+    return map[method] || 'No definido';
+};
+
+const saleStatusClass = (status) => {
+    const normalized = String(status || '').toLowerCase();
+
+    if (normalized === 'pagado') {
+        return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700';
+    }
+
+    if (normalized === 'entregado') {
+        return 'border-amber-500/30 bg-amber-500/10 text-amber-700';
+    }
+
+    if (normalized === 'cancelado') {
+        return 'border-red-500/30 bg-red-500/10 text-red-700';
+    }
+
+    return 'border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]';
+};
+
+const emptyMessage = computed(() => {
+    if (isAdmin.value) {
+        return 'Todavía no hay suficiente información para reportes gerenciales.';
+    }
+
+    if (isWaiter.value) {
+        return 'Aún no tienes ventas recientes asignadas.';
+    }
+
+    return 'Aún no tienes consumos recientes.';
+});
 </script>
 
 <template>
@@ -8,117 +144,344 @@ import SidebarLayout from '@/Layouts/SidebarLayout.vue';
 
     <SidebarLayout
         title="Dashboard"
-        subtitle="Panel general de Churrasquería Roberto"
+        :subtitle="hero.subtitle || 'Panel general de Churrasquería Roberto'"
         v-slot="{ theme }"
     >
-        <section
-            class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-hero)] p-8 text-[var(--app-hero-text)] shadow-xl"
-        >
-            <div class="absolute -right-10 -top-10 h-72 w-72 rounded-full bg-[var(--app-primary)]/20 blur-3xl"></div>
+        <div class="space-y-6 pt-24 lg:pt-10">
+            <section
+                class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-hero)] p-6 text-[var(--app-hero-text)] shadow-xl lg:p-8"
+            >
+                <div class="absolute -right-16 -top-20 h-72 w-72 rounded-full bg-[var(--app-primary)]/25 blur-3xl"></div>
+                <div class="absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[var(--app-accent)]/20 blur-3xl"></div>
 
-            <div class="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-                <div>
-                    <span class="rounded-full bg-[var(--app-primary-soft)] px-4 py-2 text-sm font-black text-[var(--app-primary-text)]">
-                        {{ theme.displayName }}
+                <div class="relative grid gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:items-center">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded-full bg-white/15 px-4 py-2 text-xs font-black uppercase tracking-wider">
+                                {{ hero.eyebrow || 'Panel principal' }}
+                            </span>
+
+                            <span class="rounded-full bg-[var(--app-primary-soft)] px-4 py-2 text-xs font-black text-[var(--app-primary-text)]">
+                                {{ hero.badge || theme.displayName }}
+                            </span>
+                        </div>
+
+                        <h1 class="mt-5 max-w-4xl text-3xl font-black leading-tight sm:text-4xl xl:text-5xl">
+                            {{ hero.title || 'Churrasquería Roberto' }}
+                        </h1>
+
+                        <p class="mt-4 max-w-3xl text-sm font-semibold leading-7 opacity-85 sm:text-base">
+                            {{ hero.subtitle || 'Sistema de administración para ventas, reservas, pagos, clientes e inventario.' }}
+                        </p>
+                    </div>
+
+                    <div class="rounded-[1.7rem] border border-white/15 bg-white/10 p-5 backdrop-blur">
+                        <p class="text-sm font-bold opacity-75">
+                            Vista personalizada para
+                        </p>
+
+                        <p class="mt-1 text-2xl font-black">
+                            {{ hero.badge || 'Usuario' }}
+                        </p>
+
+                        <div class="mt-5 grid grid-cols-3 gap-3">
+                            <div class="rounded-2xl bg-white/10 p-4">
+                                <p class="text-xs font-black opacity-70">Tema</p>
+                                <p class="mt-1 text-sm font-black">{{ theme.displayName }}</p>
+                            </div>
+
+                            <div class="rounded-2xl bg-white/10 p-4">
+                                <p class="text-xs font-black opacity-70">Rol</p>
+                                <p class="mt-1 text-sm font-black">{{ hero.badge }}</p>
+                            </div>
+
+                            <div class="rounded-2xl bg-white/10 p-4">
+                                <p class="text-xs font-black opacity-70">Estado</p>
+                                <p class="mt-1 text-sm font-black">Activo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <article
+                    v-for="metric in metrics"
+                    :key="metric.label"
+                    :class="[
+                        'relative overflow-hidden rounded-[1.5rem] border bg-[var(--app-card)] p-5 shadow-sm',
+                        toneClasses(metric.tone).card
+                    ]"
+                >
+                    <div class="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-20 blur-2xl"
+                         :class="toneClasses(metric.tone).bar"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-bold text-[var(--app-muted)]">
+                                {{ metric.label }}
+                            </p>
+
+                            <p class="mt-3 text-2xl font-black tracking-tight text-[var(--app-text)]">
+                                {{ metricValue(metric) }}
+                            </p>
+
+                            <p class="mt-2 text-xs font-semibold text-[var(--app-muted)]">
+                                {{ metric.helper }}
+                            </p>
+                        </div>
+
+                        <div
+                            :class="[
+                                'flex h-11 w-11 items-center justify-center rounded-xl',
+                                toneClasses(metric.tone).icon
+                            ]"
+                        >
+                            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path
+                                    v-if="metric.tone === 'emerald'"
+                                    d="m5 12 4 4L19 6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    v-else-if="metric.tone === 'amber'"
+                                    d="M12 8v5l3 2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <circle
+                                    v-if="metric.tone === 'amber'"
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                />
+                                <template v-else-if="metric.tone === 'blue'">
+                                    <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" />
+                                    <path d="M14 14h2v2h-2zM18 14h2v6h-4v-2h2zM14 18h2v2h-2z" />
+                                </template>
+                                <template v-else-if="metric.tone === 'primary'">
+                                    <path d="M4 19V5" stroke-linecap="round" />
+                                    <path d="M8 17V9M12 17V7M16 17v-5M20 17V4" stroke-linecap="round" />
+                                </template>
+                            </svg>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+                <article class="rounded-[1.6rem] border border-[var(--app-border)] bg-[var(--app-card)] p-5 shadow-sm">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-lg font-black text-[var(--app-text)]">
+                                {{ isClient ? 'Mis consumos recientes' : 'Ventas recientes' }}
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
+                                {{ isClient ? 'Últimos pedidos y pagos registrados.' : 'Últimas ventas con estado de pago y cliente.' }}
+                            </p>
+                        </div>
+
+                        <span class="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs font-black text-[var(--app-muted)]">
+                            {{ recentSales.length }} registros
+                        </span>
+                    </div>
+
+                    <div class="mt-5 grid gap-3">
+                        <article
+                            v-for="sale in recentSales"
+                            :key="sale.id"
+                            class="rounded-[1.2rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4"
+                        >
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="text-base font-black text-[var(--app-text)]">
+                                            Venta #{{ sale.id }}
+                                        </p>
+
+                                        <span
+                                            :class="[
+                                                'rounded-full border px-3 py-1 text-xs font-black',
+                                                saleStatusClass(sale.status)
+                                            ]"
+                                        >
+                                            {{ sale.status }}
+                                        </span>
+                                    </div>
+
+                                    <p class="mt-2 text-sm font-semibold text-[var(--app-muted)]">
+                                        {{ sale.client }} · {{ sale.date }} {{ sale.hour || '' }}
+                                    </p>
+
+                                    <p class="mt-1 text-xs font-bold text-[var(--app-muted)]">
+                                        {{ sale.items_count || 0 }} producto(s) · {{ paymentMethodLabel(sale.payment_method) }} · {{ paymentStatusLabel(sale.payment_status) }}
+                                    </p>
+                                </div>
+
+                                <p class="text-2xl font-black text-[var(--app-text)]">
+                                    {{ money(sale.total) }}
+                                </p>
+                            </div>
+                        </article>
+
+                        <article
+                            v-if="recentSales.length === 0"
+                            class="rounded-[1.2rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-8 text-center"
+                        >
+                            <p class="text-base font-black text-[var(--app-text)]">
+                                Sin movimientos todavía
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
+                                {{ emptyMessage }}
+                            </p>
+                        </article>
+                    </div>
+                </article>
+
+                <aside class="space-y-6">
+                    <article class="rounded-[1.6rem] border border-[var(--app-border)] bg-[var(--app-card)] p-5 shadow-sm">
+                        <p class="text-lg font-black text-[var(--app-text)]">
+                            Acciones rápidas
+                        </p>
+
+                        <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
+                            Atajos según tu rol.
+                        </p>
+
+                        <div class="mt-5 grid gap-3">
+                            <Link
+                                v-for="action in quickActions"
+                                :key="action.label"
+                                :href="action.url"
+                                :class="[
+                                    'group rounded-[1.2rem] border p-4 transition hover:-translate-y-0.5 hover:shadow-md',
+                                    toneClasses(action.tone).card
+                                ]"
+                            >
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-black text-[var(--app-text)]">
+                                            {{ action.label }}
+                                        </p>
+
+                                        <p class="mt-1 text-xs font-semibold text-[var(--app-muted)]">
+                                            {{ action.description }}
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        :class="[
+                                            'flex h-10 w-10 items-center justify-center rounded-xl',
+                                            toneClasses(action.tone).icon
+                                        ]"
+                                    >
+                                        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                    </article>
+
+                    <article class="rounded-[1.6rem] border border-[var(--app-border)] bg-[var(--app-card)] p-5 shadow-sm">
+                        <p class="text-lg font-black text-[var(--app-text)]">
+                            {{ isClient ? 'Mis favoritos' : 'Productos destacados' }}
+                        </p>
+
+                        <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
+                            Basado en cantidad vendida.
+                        </p>
+
+                        <div class="mt-5 grid gap-3">
+                            <div
+                                v-for="product in topProducts"
+                                :key="product.name"
+                                class="rounded-[1.1rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4"
+                            >
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-black text-[var(--app-text)]">
+                                            {{ product.name }}
+                                        </p>
+
+                                        <p class="mt-1 text-xs font-semibold text-[var(--app-muted)]">
+                                            {{ number(product.quantity) }} unidad(es)
+                                        </p>
+                                    </div>
+
+                                    <p class="text-sm font-black text-[var(--app-text)]">
+                                        {{ money(product.total) }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                v-if="topProducts.length === 0"
+                                class="rounded-[1.1rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-5 text-center"
+                            >
+                                <p class="text-sm font-black text-[var(--app-text)]">
+                                    Sin productos aún
+                                </p>
+
+                                <p class="mt-1 text-xs font-semibold text-[var(--app-muted)]">
+                                    Aparecerán cuando existan consumos.
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+                </aside>
+            </section>
+
+            <section class="rounded-[1.6rem] border border-[var(--app-border)] bg-[var(--app-card)] p-5 shadow-sm">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-lg font-black text-[var(--app-text)]">
+                            Estado de ventas
+                        </p>
+
+                        <p class="mt-1 text-sm font-semibold text-[var(--app-muted)]">
+                            Distribución general según tu rol.
+                        </p>
+                    </div>
+
+                    <span class="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs font-black text-[var(--app-muted)]">
+                        Total: {{ number(statusTotal) }}
                     </span>
-
-                    <h1 class="mt-6 max-w-3xl text-5xl font-black leading-tight">
-                        Churrasquería Roberto
-                    </h1>
-
-                    <p class="mt-5 max-w-2xl text-base leading-7 opacity-80">
-                        Sistema de administración para ventas, reservas, mesas, clientes, empleados e inventario.
-                    </p>
                 </div>
 
-                <div class="rounded-[2rem] border border-white/10 bg-white/10 p-6 backdrop-blur">
-                    <p class="text-sm opacity-70">Tema actual</p>
-                    <p class="mt-1 text-2xl font-black">{{ theme.displayName }}</p>
+                <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div
+                        v-for="item in statusBreakdown"
+                        :key="item.label"
+                        class="rounded-[1.2rem] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4"
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-sm font-black text-[var(--app-text)]">
+                                {{ item.label }}
+                            </p>
 
-                    <div class="mt-6 grid grid-cols-3 gap-3">
-                        <div class="h-20 rounded-2xl bg-[var(--app-primary)]/60"></div>
-                        <div class="h-20 rounded-2xl bg-[var(--app-accent)]/60"></div>
-                        <div class="h-20 rounded-2xl bg-white/20"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-4">
-            <article class="relative overflow-hidden rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm xl:col-span-2">
-                <div class="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[var(--app-primary)]/20 blur-3xl"></div>
-
-                <div class="relative">
-                    <p class="text-sm font-black uppercase tracking-[0.18em] text-[var(--app-muted)]">
-                        Revenue Today
-                    </p>
-
-                    <h3 class="mt-5 text-5xl font-black tracking-tight text-[var(--app-text)]">
-                        Bs. 42,500
-                    </h3>
-
-                    <p class="mt-3 text-sm font-black text-[var(--app-primary)]">
-                        +15% vs último viernes
-                    </p>
-
-                    <div class="mt-8 flex h-28 items-end gap-3">
-                        <div class="h-[45%] flex-1 rounded-t-xl bg-[var(--app-surface-soft)]"></div>
-                        <div class="h-[60%] flex-1 rounded-t-xl bg-[var(--app-surface-soft)]"></div>
-                        <div class="h-[52%] flex-1 rounded-t-xl bg-[var(--app-surface-soft)]"></div>
-                        <div class="h-[78%] flex-1 rounded-t-xl bg-[var(--app-surface-soft)]"></div>
-                        <div class="h-[65%] flex-1 rounded-t-xl bg-[var(--app-primary-soft)]"></div>
-                        <div class="h-[70%] flex-1 rounded-t-xl bg-[var(--app-primary)]"></div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm">
-                <p class="text-sm font-black uppercase tracking-[0.18em] text-[var(--app-muted)]">
-                    Stock crítico
-                </p>
-
-                <div class="mt-6 space-y-5">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <p class="font-black text-[var(--app-text)]">Picanha Gold</p>
-                            <p class="text-sm font-semibold text-[var(--app-muted)]">Se acaba en 2 hrs</p>
+                            <p class="text-sm font-black text-[var(--app-muted)]">
+                                {{ number(item.count) }}
+                            </p>
                         </div>
-                        <span class="rounded-xl bg-[var(--app-primary-soft)] px-3 py-2 text-sm font-black text-[var(--app-primary-text)]">
-                            4 kg
-                        </span>
-                    </div>
 
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <p class="font-black text-[var(--app-text)]">Bife de Chorizo</p>
-                            <p class="text-sm font-semibold text-[var(--app-muted)]">Inventario bajo</p>
+                        <div class="mt-3 h-2 overflow-hidden rounded-full bg-[var(--app-card)]">
+                            <div
+                                class="h-full rounded-full bg-[var(--app-primary)]"
+                                :style="{ width: `${statusPercent(item)}%` }"
+                            ></div>
                         </div>
-                        <span class="rounded-xl bg-[var(--app-surface-soft)] px-3 py-2 text-sm font-black text-[var(--app-text)]">
-                            12 kg
-                        </span>
+
+                        <p class="mt-2 text-xs font-semibold text-[var(--app-muted)]">
+                            {{ statusPercent(item) }}% del total
+                        </p>
                     </div>
                 </div>
-            </article>
-
-            <article class="rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-card)] p-6 shadow-sm">
-                <p class="text-sm font-black uppercase tracking-[0.18em] text-[var(--app-muted)]">
-                    Ocupación
-                </p>
-
-                <div class="flex flex-col items-center justify-center py-6">
-                    <div class="relative h-36 w-36">
-                        <svg class="h-full w-full -rotate-90" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--app-surface-soft)" stroke-width="10" />
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--app-primary)" stroke-width="10" stroke-dasharray="264" stroke-dashoffset="53" stroke-linecap="round" />
-                        </svg>
-
-                        <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <p class="text-4xl font-black text-[var(--app-text)]">80%</p>
-                            <p class="text-sm font-black text-[var(--app-muted)]">Full</p>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        </section>
+            </section>
+        </div>
     </SidebarLayout>
 </template>

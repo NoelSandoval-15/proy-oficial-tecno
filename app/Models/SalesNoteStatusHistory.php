@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Sales_Note;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesNoteStatusHistory extends Model
 {
@@ -18,13 +18,33 @@ class SalesNoteStatusHistory extends Model
         'description',
     ];
 
-    public function sales_note()
+    protected $casts = [
+        'sales_notes_id' => 'integer',
+        'users_id' => 'integer',
+    ];
+
+    public function sales_note(): BelongsTo
     {
         return $this->belongsTo(Sales_Note::class, 'sales_notes_id');
     }
 
-    public function user()
+    public function salesNote(): BelongsTo
+    {
+        return $this->belongsTo(Sales_Note::class, 'sales_notes_id');
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'users_id');
+    }
+
+    public function scopeForSale(Builder $query, int $salesNoteId): Builder
+    {
+        return $query->where('sales_notes_id', $salesNoteId);
+    }
+
+    public function scopeLatestFirst(Builder $query): Builder
+    {
+        return $query->latest('id');
     }
 }
