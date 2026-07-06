@@ -12,9 +12,9 @@ class UsersSeeder extends Seeder
     {
         // 1. Usuarios existentes (evitar duplicados)
         $mabo = User::firstOrCreate(
-            ['email' => 'ballivian02@gmail.com'],
+            ['email' => 'calvimontesvediam108@gmail.com'],
             [
-                'name'      => 'MABO',
+                'name'      => 'miguel angel',
                 'password'  => Hash::make('123456789'),
                 'themes_id' => 1,
             ]
